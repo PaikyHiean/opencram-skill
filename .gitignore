@@ -1,0 +1,32 @@
+# 用户课件（私人，不入库）
+PPT/
+
+# 运行时中间产物（可由脚本重新生成）
+work/
+
+# 最终 PDF（二进制大文件，按需本地生成）
+outputs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# 临时调试脚本（以 _ 开头）
+scripts/_*.py
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
