@@ -22,6 +22,7 @@ from lib import common as C  # noqa: E402
 # 产物代号 → (模板文件, 输出文件, 该产物依赖的数据文件)
 TARGETS = {
     "l1": ("l1.typ", "L1.pdf", C.WORK_DIR / "distilled" / "l1.json"),
+    "qa": ("qa.typ", "QA.pdf", C.WORK_DIR / "distilled" / "qa.json"),
 }
 
 
@@ -52,7 +53,7 @@ def render(target: str) -> Path:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="开卷考 skill 渲染")
-    ap.add_argument("target", help="产物代号：l1（后续 l2/card/mindmap/qa）")
+    ap.add_argument("target", help="产物代号：l1 | qa（后续 l2/card/mindmap）")
     ap.add_argument("--open", action="store_true", help="渲染后用系统默认程序打开")
     args = ap.parse_args()
 

@@ -162,10 +162,49 @@ python scripts/verify_l1.py          # 可选：检查每节有源指针、锚�
 ```
 AI 生成的小节在 PDF 中以 `〔AI〕` 红色小字标注（不影响阅读，提示需核对原文）。
 
-### Phase 7–8 · 其余产物（L2/C/M/QA）
-**本版尚未实现**，留作下一迭代：L2 关键词索引、C 速查卡、M 思维导图、QA 简答记录。
+### Phase 7 · QA（简答/论述 QA 记录）
+
+#### 步骤一：切输入包
+```
+python scripts/prep_qa.py
+```
+读 `chapters.json` + 各章 `content.json`，输出 `work/distilled/qa/in_<k>.json`（每章一包，
+含正文 + 备注 `notes`——答案常藏在备注里）；并写 `qa/index.json`。
+
+#### 步骤二：子 agent 逐章抽题
+按 `qa/index.json` 逐章派子 agent（角色定义见 `agents/qa.md`），
+每个只读自己那章的 `in_<k>.json`，产出 `out_<k>.json`：
+```json
+{
+  "chapter_title": "...",
+  "items": [
+    { "type": "简答题",
+      "question": "题目原文（逐字）",
+      "answer":   "答案原文（或 AI 补充）",
+      "anchors":  ["文件名#s5"],
+      "ai_answer": false }
+  ]
+}
+```
+- 只收 PPT 原文里**确实出现的题目**，不自行出题。
+- 有题无答 → AI 补答，`ai_answer: true`；逐字题目与 AI 答案保持物理分离（字段分离）。
+- 子 agent 只回简报（题目数/AI 补答数），不回全文。
+
+#### 步骤三：合并
+```
+python scripts/merge_qa.py
+```
+读所有 `out_<k>.json`，添加编号（`Q1.`/`Q2.`...）与源指针，写 `work/distilled/qa.json`。
+
+#### 步骤四：渲染
+```
+python scripts/render.py qa           # → outputs/QA.pdf
+```
+AI 补答在 PDF 中以 `〔AI〕` 红色小字标注；题目/答案区之间用细横线分隔。
+
+### Phase 8 · 其余产物（L2/C/M）
+**本版尚未实现**，留作下一迭代：L2 关键词索引、C 速查卡、M 思维导图。
 实现时复用同一套锚点/映射/参考基准机制，渲染同样走 Typst（`render.py <target>`）。
-QA 中 PPT 原有题目与答案**逐字保留**；有题无答时 AI 补答并标 `〔AI〕`、与抽取物理分开。
 
 ### Phase 9 · 复核（Coverage / 防臆造）
 - 每章都有产物？对照 `chapters.json`。
@@ -193,8 +232,13 @@ QA 中 PPT 原有题目与答案**逐字保留**；有题无答时 AI 补答并�
 | `work/distilled/ai/out_<k>.json` | 第 k 章的 AI 蒸馏输出 |
 | `work/distilled/ai/image_screen_in.json` | 图片筛查 agent 输入包 |
 | `work/distilled/ai/image_screen_out.json` | 图片筛查 agent 裁决 |
+| `work/distilled/qa/index.json` | QA 各章 k 值→输入/输出文件映射 |
+| `work/distilled/qa/in_<k>.json` | 第 k 章的 QA agent 输入包（含备注） |
+| `work/distilled/qa/out_<k>.json` | 第 k 章的 QA agent 产出（原题+答案） |
+| `work/distilled/qa.json` | QA 主数据（合并后，供渲染） |
 | `outputs/L0.pdf` | 带书签清洗版全集 |
 | `outputs/L1.pdf` | 核心知识手册 |
+| `outputs/QA.pdf` | 简答/论述 QA 记录 |
 
 ## 安装为全局 skill
 把 `SKILL.md scripts/ templates/ agents/` 复制到 `~/.claude/skills/open-book-exam-courseware/`。
