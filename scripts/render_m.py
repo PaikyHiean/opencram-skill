@@ -200,22 +200,23 @@ def draw_chapter_mindmap(ax, chapter: dict, FW: float, FH: float):
     if not branches:
         return
 
-    # ── 几何常量（英寸） ──
-    ML, MR, MT, MB = 0.28, 0.22, 0.28, 0.28
-    ROOT_W = 1.25
-    ROOT_X = ML
-    T1_X   = ROOT_X + ROOT_W + 0.20   # 第一垂直干线 x
-    BR_X   = T1_X + 0.15              # 分支节点左边
-    BR_W   = 1.62
-    T2_X   = BR_X + BR_W + 0.18       # 第二垂直干线 x
-    NODE_X = T2_X + 0.12              # 叶节点文字左边
+    # ── 几何常量（英寸，A4 纵向） ──
+    ML, MR, MT, MB = 0.22, 0.18, 0.28, 0.28
+    ROOT_W = 1.05
+    ROOT_X = ML                        # = 0.22
+    T1_X   = ROOT_X + ROOT_W + 0.16   # = 1.43，第一垂直干线 x
+    BR_X   = T1_X + 0.12              # = 1.55，分支节点左边
+    BR_W   = 1.30
+    T2_X   = BR_X + BR_W + 0.14       # = 2.99，第二垂直干线 x
+    NODE_X = T2_X + 0.10              # = 3.09，叶节点文字左边
+    # 可用文字宽度 ≈ 4.9 英寸（FW 8.27 − NODE_X 3.09 − 0.06 − MR 0.18）
 
     Y_TOP, Y_BOT = FH - MT, MB
     AVAIL_H = Y_TOP - Y_BOT
 
-    # NODE_X 到右边距可用宽度 ≈ 7.6 英寸，8pt 中文约可放 70 字
-    # 单行上限取保守值 40，超过则换行显示（最多 2 行）
-    SINGLE_LINE_CHARS = 40
+    # NODE_X 到右边距可用宽度 ≈ 4.9 英寸，7pt 中文约可放 51 字
+    # 单行上限取保守值 34，超过则换行显示（最多 2 行）
+    SINGLE_LINE_CHARS = 34
     # 最小槽高（6.5pt 可读下限），最多可放 ≈ 67 节点
     MIN_SLOT_H = 0.115
 
@@ -374,7 +375,7 @@ def main() -> int:
     C.OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = C.OUTPUTS_DIR / "M.pdf"
 
-    FW, FH = 11.69, 8.27   # A4 横向（英寸）
+    FW, FH = 8.27, 11.69   # A4 纵向（英寸）
 
     with PdfPages(str(out_path)) as pdf:
         # 第 1 页：全局总览
