@@ -26,8 +26,6 @@ from matplotlib.patches import FancyBboxPatch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import common as C  # noqa: E402
 
-# ── CJK 字体 ──
-plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
 # ── 颜色调色板 ──
@@ -545,6 +543,9 @@ def main() -> int:
         raise SystemExit(f"未找到 {M_JSON}，请先运行 merge_m.py。")
 
     data = json.loads(M_JSON.read_text("utf-8"))
+    cjk = data.get("meta", {}).get("cjk_font", "Microsoft YaHei")
+    plt.rcParams["font.sans-serif"] = [cjk, "Microsoft YaHei", "SimHei",
+                                       "Noto Sans CJK SC", "DejaVu Sans"]
     global_data = data.get("global", {})
     chapters_data = data.get("chapters", [])
 

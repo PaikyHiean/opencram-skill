@@ -15,6 +15,7 @@ L1/QA/L2/C 用 Typst；M 思维导图用 matplotlib（render_m.py），不依赖
 from __future__ import annotations
 
 import argparse
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -47,7 +48,7 @@ def render_typst(target: str) -> Path:
     out = C.OUTPUTS_DIR / out_name
     cmd = [typst, "compile", "--root", str(C.SKILL_ROOT), str(tmpl), str(out)]
     C.eprint(f"  $ {' '.join(cmd)}")
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         raise SystemExit(f"Typst 渲染失败：\n{r.stdout}\n{r.stderr}")
     return out
@@ -82,7 +83,13 @@ def main() -> int:
     print(f"=== 渲染完成 ===\n  → {out}")
     if args.open:
         import os
-        os.startfile(str(out))  # noqa: S606  (Windows)
+        _os = platform.system()
+        if _os == "Windows":
+            os.startfile(str(out))  # noqa: S606
+        elif _os == "Darwin":
+            subprocess.run(["open", str(out)])
+        else:
+            subprocess.run(["xdg-open", str(out)])
     return 0
 
 

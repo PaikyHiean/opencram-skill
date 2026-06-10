@@ -45,6 +45,7 @@ def diagnose() -> dict:
     pptx = _check_pymod("pptx")
     pypdf = _check_pymod("pypdf")
     reportlab = _check_pymod("reportlab")
+    matplotlib = _check_pymod("matplotlib")
 
     soffice = C.find_soffice()
     typst = C.find_typst()
@@ -59,12 +60,13 @@ def diagnose() -> dict:
         "python-pptx": pptx,
         "pypdf": pypdf,
         "reportlab": reportlab,
+        "matplotlib": matplotlib,
         "libreoffice": {"ok": soffice is not None, "path": soffice},
         "typst": {"ok": typst is not None, "path": typst},
         "cjk_font": {"ok": cjk_ok, "hits": cjk_hits},
     }
     report["all_ok"] = all([
-        py_ok, pptx["ok"], pypdf["ok"], reportlab["ok"],
+        py_ok, pptx["ok"], pypdf["ok"], reportlab["ok"], matplotlib["ok"],
         report["libreoffice"]["ok"], report["typst"]["ok"], cjk_ok,
     ])
     return report
@@ -82,7 +84,7 @@ def _run(cmd: list[str]) -> int:
 def install_missing(report: dict) -> None:
     """尝试安装缺失项。须在取得用户同意后调用。"""
     # 1) pip 包
-    missing_py = [name for name in ("python-pptx", "pypdf", "reportlab")
+    missing_py = [name for name in ("python-pptx", "pypdf", "reportlab", "matplotlib")
                   if not report[name]["ok"]]
     if missing_py:
         C.eprint(f"[install] pip 安装：{missing_py}")
@@ -123,7 +125,7 @@ def _human(report: dict) -> str:
     p = report["python"]
     lines.append(f"{mark(p['ok'])} Python {p['version']}  ({p['executable']})")
     for key, label in (("python-pptx", "python-pptx"), ("pypdf", "pypdf"),
-                       ("reportlab", "reportlab")):
+                       ("reportlab", "reportlab"), ("matplotlib", "matplotlib")):
         r = report[key]
         extra = r.get("version", "") if r["ok"] else r.get("error", "")
         lines.append(f"{mark(r['ok'])} {label}  {extra}")
