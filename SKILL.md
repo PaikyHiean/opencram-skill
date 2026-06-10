@@ -15,7 +15,7 @@ description: >
 ## 不可妥协的铁律（每一步都遵守）
 
 1. **抽取与生成严格分离，绝不臆造。** 只重组、压缩、组织源材料；任何 AI 生成内容
-   必须物理分开并显式标注「AI 生成，待核」。
+   必须物理分开并显式标注 `〔AI〕`。
 2. **全程可溯源。** 每条知识点挂一个来源锚点 = `(源文件名, 源内页序号)`，永不漂移。
 3. **显示指针按"参考基准"换算。** 带原件打印→显示「源：文件名 s.N」；带 L0 打印→
    显示「L0 p.X」（用 `work/l0_pagemap.json` 换算）。不要把 L0 页码硬编码进知识点。
@@ -29,7 +29,7 @@ description: >
 - 所有重活由 `scripts/` 下的 Python 脚本做，结果写到 `work/`。
 - 你只读脚本打印的**简报**与 `work/*.json`，绝不把 `work/extracted/*/slides.md`
   的全文一次性读进上下文。
-- 需要 AI 判断时（见下），**按单章**读 `work/extracted/<stem>/content.json`，
+- 需要 AI 判断时（见下），**按单章**读 `work/distilled/ai/in_<k>.json`，
   用完即弃；章多可派 Task 子 agent 并行，每个只领一章。
 
 ## 运行环境
@@ -60,6 +60,9 @@ python scripts/detect_chapters.py
 用户可合并/拆分/重命名/标记附录或习题。按用户意见**直接编辑 `work/drafts/chapters.json`**
 （改 `chapters[].title`、移动 `files`、把项移入/移出 `unfiled`）后再继续。**不要替用户拍板。**
 
+> ⚠ 若后续 AI 增强管线已运行后才修改章节图，需重新运行 `prep_ai_distill.py`
+> 并由子 agent 对受影响章重新蒸馏。
+
 ### Phase 2 · 产物勾选与参数（必须用户确认）
 向用户给出 6 产物清单（默认勾 L0+L1），并设两项参数，写入 `work/config.json`：
 ```json
@@ -68,7 +71,6 @@ python scripts/detect_chapters.py
 ```
 - `reference_base`：`source`（带原件打印，默认）/ `l0`（带 L0 打印，显示 L0 页码）。
 - `compression`：`conservative`（默认，可誊抄）/ `standard`（要点化）/ `aggressive`（骨架）。
-- 给用户看 §"三档对比"示例帮助理解（见 TODO.md §5）。
 
 ### Phase 3 · bootstrap（依赖体检/安装，征求一次同意）
 ```
@@ -94,22 +96,76 @@ python scripts/build_l0.py --keep-all # 一页不删（最保守）
 `work/l0_deleted.json`（删了哪些页，**请向用户复核删页清单**）。
 
 ### Phase 6 · L1（核心知识手册）
+
+#### 6a · 确定性基线（快速，纯抽取零臆造）
 ```
-python scripts/distill_l1.py          # 确定性·结构保留蒸馏（纯抽取，零臆造）
-python scripts/render.py l1           # Typst 渲染（竖向单栏）→ outputs/L1.pdf
+python scripts/distill_l1.py
+python scripts/render.py l1
 ```
-- 按 PPT 自身「幻灯片标题 + 项目符号缩进层级」机械重建大纲：
-  **章 → 一、二、节（带源指针）→ 1. 2. 点 → 明细（缩进）**；连续同标题幻灯片自动合并；
-  源指针只标在**节级**。`config.compression` 只裁明细深度、不改写文本，**不新增事实**。
-- **AI 增强（可选）**：要更聪明的语义归并/补标题时，按单章读
-  `work/extracted/<stem>/content.json`，产出更优的 `work/distilled/l1.json`
-  （结构同基线：`chapters[].sections[]`）再 `render.py l1`。AI 改写的小节须置
-  `"ai_generated": true`，模板会标「AI 生成，待核」。
+按 PPT 自身「幻灯片标题 + 项目符号缩进层级」机械重建大纲：
+**章 → 一、二、节（带源指针）→ 1. 2. 点 → 明细（缩进）**；连续同标题幻灯片自动合并。
+适合快速出初稿或不需要 AI 的情况。
+
+#### 6b · AI 语义增强（推荐，语义归并 + 图片筛查）
+
+**步骤一：切输入包**
+```
+python scripts/prep_ai_distill.py
+```
+把每章内容切为 `work/distilled/ai/in_<k>.json`，并写 `ai/index.json`。
+每包只含该章幻灯片的标题/段落/表格/图片名，不含二进制。
+
+**步骤二：子 agent 逐章蒸馏**
+按 `ai/index.json` 逐章（或并行）派子 agent（角色定义见 `agents/distillation.md`），
+每个只读自己那章的 `in_<k>.json`，产出 `out_<k>.json`：
+```json
+{
+  "chapter_title": "...",
+  "sections": [
+    { "heading": "概念", "anchors": ["文件名#s2", ...],
+      "points": [ {"text": "...", "details": ["..."]}, ... ],
+      "tables": ["col1 | col2\n值 | 值"],
+      "ai_generated": true }
+  ]
+}
+```
+- 子 agent 只负责**内容**：挑核心、去重、凝练、写小节标题，正文逐字。
+- 编号（一、二）、源指针、图片路径由 `merge_ai_l1.py` 确定性添加，子 agent 不碰。
+
+**步骤三：合并**
+```
+python scripts/merge_ai_l1.py
+```
+有 `out_<k>.json` 的章用 AI 版覆盖，其余保留确定性基线。结果写回 `work/distilled/l1.json`。
+
+**步骤四：图片筛查（可选，显著减小 PDF 体积）**
+```
+python scripts/screen_images.py
+```
+生成 `work/distilled/ai/image_screen_in.json`（每节：文字摘要 + 图片路径列表）。
+派子 agent（角色定义见 `agents/image_screening.md`）逐图裁决，产出 `image_screen_out.json`：
+```json
+{ "decisions": [
+    { "sec_id": "ch0_sec2", "img": "work/extracted/.../xxx.png",
+      "keep": true, "reason": "流程图，文字未涵盖" }
+  ] }
+```
+然后写回：
+```
+python scripts/apply_image_screen.py
+```
+
+**步骤五：渲染与验证**
+```
+python scripts/render.py l1          # → outputs/L1.pdf
+python scripts/verify_l1.py          # 可选：检查每节有源指针、锚点可解析
+```
+AI 生成的小节在 PDF 中以 `〔AI〕` 红色小字标注（不影响阅读，提示需核对原文）。
 
 ### Phase 7–8 · 其余产物（L2/C/M/QA）
 **本版尚未实现**，留作下一迭代：L2 关键词索引、C 速查卡、M 思维导图、QA 简答记录。
 实现时复用同一套锚点/映射/参考基准机制，渲染同样走 Typst（`render.py <target>`）。
-QA 中 PPT 原有题目与答案**逐字保留**；有题无答时 AI 补答并标「AI 生成，待核」、与抽取物理分开。
+QA 中 PPT 原有题目与答案**逐字保留**；有题无答时 AI 补答并标 `〔AI〕`、与抽取物理分开。
 
 ### Phase 9 · 复核（Coverage / 防臆造）
 - 每章都有产物？对照 `chapters.json`。
@@ -125,11 +181,21 @@ QA 中 PPT 原有题目与答案**逐字保留**；有题无答时 AI 补答并�
 | `work/manifest.json` | Phase 0 盘点 |
 | `work/drafts/chapters.json` | 章节图（**用户确认后**锁定） |
 | `work/config.json` | 参考基准 / 精简档 / 选中产物 |
-| `work/extracted/<stem>/{content.json,slides.md,images/}` | 抽取产物（结构化+人读+原图） |
+| `work/extracted/<stem>/content.json` | 幻灯片结构化数据（锚点/标题/段落/表/图名） |
+| `work/extracted/<stem>/slides.md` | 人读版归一化 Markdown |
+| `work/extracted/<stem>/images/` | 从 PPT 抠出的内嵌图 |
 | `work/maps/<stem>.json` | 锚点↔PDF页映射、对齐状态 |
-| `work/l0_pagemap.json` | 锚点→L0页（参考基准=l0 时换算用） |
-| `outputs/L0.pdf` … `outputs/L1.pdf` | 最终产物 |
+| `work/l0_pagemap.json` | 锚点→L0页（`reference_base=l0` 换算用） |
+| `work/l0_deleted.json` | build_l0 删除的废页清单（供复核） |
+| `work/distilled/l1.json` | L1 主数据（基线或 AI 合并后的最终版） |
+| `work/distilled/ai/index.json` | 各章 k 值→输入/输出文件映射 |
+| `work/distilled/ai/in_<k>.json` | 第 k 章的 AI 输入包（幻灯片摘要） |
+| `work/distilled/ai/out_<k>.json` | 第 k 章的 AI 蒸馏输出 |
+| `work/distilled/ai/image_screen_in.json` | 图片筛查 agent 输入包 |
+| `work/distilled/ai/image_screen_out.json` | 图片筛查 agent 裁决 |
+| `outputs/L0.pdf` | 带书签清洗版全集 |
+| `outputs/L1.pdf` | 核心知识手册 |
 
 ## 安装为全局 skill
 把 `SKILL.md scripts/ templates/ agents/` 复制到 `~/.claude/skills/open-book-exam-courseware/`。
-`work/`、`outputs/`、`PPT/` 是运行时/测试数据，不必随 skill 分发。
+`work/`、`outputs/`、课件文件夹是运行时/测试数据，不必随 skill 分发。
