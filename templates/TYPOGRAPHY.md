@@ -78,3 +78,69 @@ ai-badge = rgb("#aa3333")  // 〔AI〕标记
 pointer = rgb("#888")      // 〔源：…〕指针
 detail-text = rgb("#444")  // 明细文字（略淡，区分主次）
 ```
+
+---
+
+# L2 排版配置参考
+
+本文档记录 `l2.typ` 中经过调试验证的双栏关键词索引排版参数。
+
+## 核心参数
+
+### 页面（比 L1 稍窄边距，为双栏留余量）
+```typst
+#set page(
+  paper: "a4",
+  margin: (x: 1.8cm, top: 1.6cm, bottom: 1.3cm),
+)
+```
+
+### 字体与段落
+```typst
+#set text(font: body-font, size: 9.5pt, lang: "zh")
+#set par(justify: true, leading: 0.75em, spacing: 0.55em)
+```
+- 正文比 L1 小 1pt（9.5pt vs 10.5pt），使双栏词条更紧凑
+- `spacing: 0.55em` 略小于 L1 的 0.72em，适合索引密度
+
+### 双栏布局
+```typst
+columns(2, gutter: 1.2em)[...]
+```
+- 每章 navy 色块标题占全宽（位于 `columns` 块外），避免章头被折入栏内
+
+## 词条卡间距（关键，经调试定型）
+
+```typst
+// 词条卡外框
+block(above: 0.55em, below: 0.15em,
+      inset: (left: 6pt, top: 5pt, bottom: 5pt, right: 3pt), ...)
+
+// 词条名行（徽章 + 粗体术语）→ 定义文字
+block(below: 0.6em, ...)    // ← 调试关键值
+```
+
+### 为什么词条名的 below 是 0.6em
+
+`leading: 0.75em` 是正文段落换行的基线间距。词条名（粗体 10pt）与其下方定义文字（9pt）
+之间的间距若小于 leading，视觉上会显得"粘连"——读者难以区分"词条名结束、定义开始"。
+
+调试路径（依据折叠机制：实际间距 = `max(上块.below, 下块.above)`）：
+
+| 尝试值 | 视觉效果 | 结论 |
+|---|---|---|
+| `below: 0.3em` | 词条名与定义粘连，层级感弱 | ✗ 过窄 |
+| `below: 0.6em` | 与正文换行视觉相当，层级清晰 | ✓ 定型值 |
+
+同时将 `inset.top/bottom` 从 3pt/4pt 调为 5pt/5pt，使每张词条卡顶底留白对称。
+
+## 频率徽章颜色
+
+```typst
+高 = rgb("#c0392b")   // 红：核心概念，高视觉权重
+中 = rgb("#1a5ca8")   // 蓝：重要术语（与 QA 简答题徽章同色，统一语义）
+低 = rgb("#888888")   // 灰：一般词汇，低视觉权重
+```
+
+左色带颜色与徽章同色（`stroke: (left: 2.5pt + freq-color(t.freq))`），
+使频率信息同时体现在两个位置，扫读时即可感知重要性。

@@ -50,10 +50,12 @@
     above: 0.55em,
     below: 0.15em,
     stroke: (left: 2.5pt + freq-color(t.freq)),
-    inset: (left: 6pt, top: 3pt, bottom: 4pt, right: 3pt),
+    inset: (left: 6pt, top: 5pt, bottom: 5pt, right: 3pt),
     {
       // 行1：频率徽章 + 术语（粗体）
-      block(below: 0.3em, {
+      // below: 0.6em ≈ leading(0.75em)，使词条名与定义之间的视觉间距
+      // 不窄于正文段落换行间距（参见 TYPOGRAPHY.md §间距折叠原则）
+      block(below: 0.6em, {
         freq-badge(t.freq)
         h(4pt)
         text(font: head-font, size: 10pt, weight: "bold")[#t.term]
@@ -61,7 +63,7 @@
       // 行2：定义（若有，来自 PPT 原文）
       if t.definition != "" {
         block(
-          below: 0.25em,
+          below: 0.3em,
           text(size: 9pt, fill: rgb("#333333"))[#t.definition]
         )
       }
