@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -87,19 +88,31 @@ def install_missing(report: dict) -> None:
         C.eprint(f"[install] pip 安装：{missing_py}")
         _run([sys.executable, "-m", "pip", "install", "--quiet", *missing_py])
 
-    # 2) LibreOffice（仅 Windows + winget）
+    # 2) LibreOffice
     if not report["libreoffice"]["ok"]:
-        C.eprint("[install] winget 安装 LibreOffice ...")
-        _run(["winget", "install", "-e", "--id", "TheDocumentFoundation.LibreOffice",
-              "--accept-package-agreements", "--accept-source-agreements",
-              "--disable-interactivity"])
+        _os = platform.system()
+        if _os == "Windows":
+            C.eprint("[install] winget 安装 LibreOffice ...")
+            _run(["winget", "install", "-e", "--id", "TheDocumentFoundation.LibreOffice",
+                  "--accept-package-agreements", "--accept-source-agreements",
+                  "--disable-interactivity"])
+        elif _os == "Darwin":
+            C.eprint("[install] 请手动运行：brew install --cask libreoffice")
+        else:
+            C.eprint("[install] 请手动运行：sudo apt install libreoffice  # 或对应包管理器")
 
-    # 3) Typst（仅 Windows + winget）
+    # 3) Typst
     if not report["typst"]["ok"]:
-        C.eprint("[install] winget 安装 Typst ...")
-        _run(["winget", "install", "-e", "--id", "Typst.Typst",
-              "--accept-package-agreements", "--accept-source-agreements",
-              "--disable-interactivity"])
+        _os = platform.system()
+        if _os == "Windows":
+            C.eprint("[install] winget 安装 Typst ...")
+            _run(["winget", "install", "-e", "--id", "Typst.Typst",
+                  "--accept-package-agreements", "--accept-source-agreements",
+                  "--disable-interactivity"])
+        elif _os == "Darwin":
+            C.eprint("[install] 请手动运行：brew install typst")
+        else:
+            C.eprint("[install] 请手动运行：snap install typst  # 或从 https://github.com/typst/typst/releases 下载")
 
 
 def _human(report: dict) -> str:

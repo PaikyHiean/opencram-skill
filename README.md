@@ -123,7 +123,7 @@
 - [Claude Code](https://claude.ai/code) — 安装好，能正常运行
 - Windows / macOS / Linux 均可
 
-其余依赖（LibreOffice、Typst、Python 库）**Claude 会在 Phase 3 自动帮你装**，你只需要点一次"同意"。首次安装大约需要下载 350MB（主要是 LibreOffice）。
+其余依赖（LibreOffice、Typst、Python 库）在 Phase 3 体检时可用 `--install` 安装。**Windows 支持全自动安装**（winget）；macOS / Linux 会打印对应的 `brew` / `apt` 命令，需手动执行。首次安装大约需要下载 350MB（主要是 LibreOffice）。
 
 ### 第一次使用
 
