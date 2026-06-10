@@ -134,13 +134,11 @@ def build(keep_all: bool, stamp: bool) -> dict:
         aligned = mp.get("aligned")
         slides = mp.get("slides", [])
 
-        # 章/源书签：定位到本源即将写入的第一页
-        first_page_idx_for_source = final_page  # 0-based writer index
-        if item["is_chapter_head"] and item["chapter_title"] != last_chapter:
-            outline_plan.append((0, item["chapter_title"], first_page_idx_for_source))
+        # 章/源书签：后置记录，避免全废页源的书签指向上一章末页
+        pages_before = final_page
+        is_new_chapter = item["is_chapter_head"] and item["chapter_title"] != last_chapter
+        if is_new_chapter:
             last_chapter = item["chapter_title"]
-        if item["multi"]:
-            outline_plan.append((1, item["source_name"], first_page_idx_for_source))
 
         if aligned:
             for s in slides:
@@ -166,6 +164,13 @@ def build(keep_all: bool, stamp: bool) -> dict:
                 pagemap[anchor] = final_page
                 if stamp:
                     _stamp_last(writer, C.stamp_text(item["source_name"], pno))
+
+        # 书签目标：有新页取第一新页（0-based），全废页回退到最后已有页
+        bm_target = pages_before if final_page > pages_before else max(pages_before - 1, 0)
+        if is_new_chapter:
+            outline_plan.append((0, item["chapter_title"], bm_target))
+        if item["multi"]:
+            outline_plan.append((1, item["source_name"], bm_target))
 
     # 写书签
     parents = {}

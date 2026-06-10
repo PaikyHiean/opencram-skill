@@ -220,6 +220,10 @@ def process_source(soffice: str, src_entry: dict) -> dict:
     C.eprint(f"[extract] {source_name}")
 
     out_dir = C.WORK_EXTRACTED / stem
+    if out_dir.exists():
+        raise SystemExit(
+            f"stem 冲突：{out_dir} 已存在。请确保所有源文件的文件名唯一后重新运行。"
+        )
     img_dir = out_dir / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
 
