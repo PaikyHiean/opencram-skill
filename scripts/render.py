@@ -1,11 +1,12 @@
 """
 render.py — 用 Typst 渲染产物 PDF。
 
-本期实现 L1（核心知识手册）；后续扩 L2/C/M/QA 分支。
 Typst 以 --root <skill_root> 编译，模板内用 root 相对路径读取 work/ 下的数据与图片。
 
 用法：
     python scripts/render.py l1            # 渲染 outputs/L1.pdf
+    python scripts/render.py qa            # 渲染 outputs/QA.pdf
+    python scripts/render.py l2            # 渲染 outputs/L2.pdf
     python scripts/render.py l1 --open     # 渲染后打开
 """
 
@@ -23,6 +24,7 @@ from lib import common as C  # noqa: E402
 TARGETS = {
     "l1": ("l1.typ", "L1.pdf", C.WORK_DIR / "distilled" / "l1.json"),
     "qa": ("qa.typ", "QA.pdf", C.WORK_DIR / "distilled" / "qa.json"),
+    "l2": ("l2.typ", "L2.pdf", C.WORK_DIR / "distilled" / "l2.json"),
 }
 
 
@@ -53,7 +55,7 @@ def render(target: str) -> Path:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="开卷考 skill 渲染")
-    ap.add_argument("target", help="产物代号：l1 | qa（后续 l2/card/mindmap）")
+    ap.add_argument("target", help="产物代号：l1 | qa | l2（后续 card/mindmap）")
     ap.add_argument("--open", action="store_true", help="渲染后用系统默认程序打开")
     args = ap.parse_args()
 

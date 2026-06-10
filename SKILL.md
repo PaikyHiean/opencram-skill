@@ -202,11 +202,50 @@ python scripts/render.py qa           # → outputs/QA.pdf
 ```
 AI 补答在 PDF 中以 `〔AI〕` 红色小字标注；题目/答案区之间用细横线分隔。
 
-### Phase 8 · 其余产物（L2/C/M）
-**本版尚未实现**，留作下一迭代：L2 关键词索引、C 速查卡、M 思维导图。
+### Phase 8 · L2（关键词索引）
+
+#### 步骤一：切输入包
+```
+python scripts/prep_l2.py
+```
+读 `chapters.json` + 各章 `content.json`，输出 `work/distilled/l2/in_<k>.json`（每章一包，
+含正文 + 表格，**不含备注**——关键词判断不依赖备注）；并写 `l2/index.json`。
+
+#### 步骤二：子 agent 逐章抽词
+按 `l2/index.json` 逐章派子 agent（角色定义见 `agents/keyword.md`），
+每个只读自己那章的 `in_<k>.json`，产出 `out_<k>.json`：
+```json
+{
+  "chapter_title": "...",
+  "terms": [
+    { "term": "近因原则",
+      "freq": "高",
+      "definition": "保险赔偿应基于直接有效地导致损失的最近原因",
+      "anchors":  ["文件名#s5", "文件名#s8"] }
+  ]
+}
+```
+- 只收专业/学科特定术语，不自行出题、不 AI 补充定义。
+- `definition` 来自 PPT 原文逐字摘录；无定义则留空字符串。
+- 子 agent 只回简报（词条数/频率分布），不回全文 JSON。
+
+#### 步骤三：合并
+```
+python scripts/merge_l2.py
+```
+读所有 `out_<k>.json`，章内按频率排序（高>中>低），添加源指针，写 `work/distilled/l2.json`。
+
+#### 步骤四：渲染
+```
+python scripts/render.py l2           # → outputs/L2.pdf
+```
+双栏布局，每章 navy 色块标题；每个词条带频率徽章（红/蓝/灰）、左色带、定义与源指针。
+
+### Phase 9 · 其余产物（C/M）
+**本版尚未实现**，留作下一迭代：C 速查卡、M 思维导图。
 实现时复用同一套锚点/映射/参考基准机制，渲染同样走 Typst（`render.py <target>`）。
 
-### Phase 9 · 复核（Coverage / 防臆造）
+### Phase 10 · 复核（Coverage / 防臆造）
 - 每章都有产物？对照 `chapters.json`。
 - L1 抽取条目无臆造（基线天然满足；AI 增强条目逐条可回源核对）。
 - 低置信处（页数不齐、疑似扫描件、AI 生成）向用户标出待核。
@@ -236,9 +275,14 @@ AI 补答在 PDF 中以 `〔AI〕` 红色小字标注；题目/答案区之间�
 | `work/distilled/qa/in_<k>.json` | 第 k 章的 QA agent 输入包（含备注） |
 | `work/distilled/qa/out_<k>.json` | 第 k 章的 QA agent 产出（原题+答案） |
 | `work/distilled/qa.json` | QA 主数据（合并后，供渲染） |
+| `work/distilled/l2/index.json` | L2 各章 k 值→输入/输出文件映射 |
+| `work/distilled/l2/in_<k>.json` | 第 k 章的关键词 agent 输入包（含表格，不含备注） |
+| `work/distilled/l2/out_<k>.json` | 第 k 章的关键词 agent 产出（术语+频率+定义） |
+| `work/distilled/l2.json` | L2 主数据（合并后，供渲染） |
 | `outputs/L0.pdf` | 带书签清洗版全集 |
 | `outputs/L1.pdf` | 核心知识手册 |
 | `outputs/QA.pdf` | 简答/论述 QA 记录 |
+| `outputs/L2.pdf` | 关键词索引 |
 
 ## 安装为全局 skill
 把 `SKILL.md scripts/ templates/ agents/` 复制到 `~/.claude/skills/open-book-exam-courseware/`。
