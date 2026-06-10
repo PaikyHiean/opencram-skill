@@ -241,11 +241,64 @@ python scripts/render.py l2           # → outputs/L2.pdf
 ```
 双栏布局，每章 navy 色块标题；每个词条带频率徽章（红/蓝/灰）、左色带、定义与源指针。
 
-### Phase 9 · 其余产物（C/M）
-**本版尚未实现**，留作下一迭代：C 速查卡、M 思维导图。
+### Phase 9 · C（速查卡）
+
+#### 步骤一：切输入包
+```
+python scripts/prep_c.py
+```
+读 `chapters.json` + 各章 `content.json`，输出 `work/distilled/c/in_<k>.json`（每章一包，
+含正文 + 表格 + **备注**——规则/流程条件常藏在备注里）；并写 `c/index.json`。
+
+#### 步骤二：子 agent 逐章抽取
+按 `c/index.json` 逐章派子 agent（角色定义见 `agents/cheatsheet.md`），
+每个只读自己那章的 `in_<k>.json`，产出 `out_<k>.json`：
+```json
+{
+  "chapter_title": "...",
+  "cards": [
+    { "type": "formula",
+      "label": "保费计算公式",
+      "body": "应缴保费 = 保险金额 × 保险费率",
+      "anchors": ["文件名#s12"] },
+    { "type": "rule",
+      "label": "近因原则适用条件",
+      "body": "① 须为直接原因\n② 原因须连续，无新原因介入",
+      "anchors": ["文件名#s5"] },
+    { "type": "table",
+      "label": "财产险 vs 责任险",
+      "body": "项目 | 财产险 | 责任险\n承保对象 | 有形财产 | 法律责任",
+      "anchors": ["文件名#s18"] },
+    { "type": "flow",
+      "label": "理赔基本流程",
+      "body": "① 出险报案\n② 现场查勘\n③ 提交材料\n④ 审核赔付",
+      "anchors": ["文件名#s30"] }
+  ]
+}
+```
+- 只收**以判断/操作为中心**的内容（条件规则、流程步骤、对比表、公式/数字门槛）
+- 纯定义不收（定义属于 L2 关键词索引）
+- body 来自 PPT 原文，表格用 ` | ` 分隔列，流程用 `①②③\n` 分隔步骤
+- 子 agent 只回简报（各类型卡片数），不回全文 JSON
+
+#### 步骤三：合并
+```
+python scripts/merge_c.py
+```
+读所有 `out_<k>.json`，章内按类型排序（公式>规则>对比>流程），添加源指针，写 `work/distilled/c.json`。
+
+#### 步骤四：渲染
+```
+python scripts/render.py c            # → outputs/C.pdf
+```
+单栏布局，每章 navy 色块标题；每张卡片带类型徽章（紫/橙/蓝/绿）、左色带、内容与源指针；
+对比表类型自动解析为 Typst 表格。
+
+### Phase 10 · 其余产物（M）
+**本版尚未实现**，留作下一迭代：M 思维导图。
 实现时复用同一套锚点/映射/参考基准机制，渲染同样走 Typst（`render.py <target>`）。
 
-### Phase 10 · 复核（Coverage / 防臆造）
+### Phase 11 · 复核（Coverage / 防臆造）
 - 每章都有产物？对照 `chapters.json`。
 - L1 抽取条目无臆造（基线天然满足；AI 增强条目逐条可回源核对）。
 - 低置信处（页数不齐、疑似扫描件、AI 生成）向用户标出待核。
@@ -279,10 +332,15 @@ python scripts/render.py l2           # → outputs/L2.pdf
 | `work/distilled/l2/in_<k>.json` | 第 k 章的关键词 agent 输入包（含表格，不含备注） |
 | `work/distilled/l2/out_<k>.json` | 第 k 章的关键词 agent 产出（术语+频率+定义） |
 | `work/distilled/l2.json` | L2 主数据（合并后，供渲染） |
+| `work/distilled/c/index.json` | C 速查卡各章 k 值→输入/输出文件映射 |
+| `work/distilled/c/in_<k>.json` | 第 k 章的速查卡 agent 输入包（含备注） |
+| `work/distilled/c/out_<k>.json` | 第 k 章的速查卡 agent 产出（规则/流程/对比/公式） |
+| `work/distilled/c.json` | C 速查卡主数据（合并后，供渲染） |
 | `outputs/L0.pdf` | 带书签清洗版全集 |
 | `outputs/L1.pdf` | 核心知识手册 |
 | `outputs/QA.pdf` | 简答/论述 QA 记录 |
 | `outputs/L2.pdf` | 关键词索引 |
+| `outputs/C.pdf` | 速查卡 |
 
 ## 安装为全局 skill
 把 `SKILL.md scripts/ templates/ agents/` 复制到 `~/.claude/skills/open-book-exam-courseware/`。

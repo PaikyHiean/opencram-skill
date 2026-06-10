@@ -144,3 +144,59 @@ block(below: 0.6em, ...)    // ← 调试关键值
 
 左色带颜色与徽章同色（`stroke: (left: 2.5pt + freq-color(t.freq))`），
 使频率信息同时体现在两个位置，扫读时即可感知重要性。
+
+---
+
+# C 排版配置参考
+
+本文档记录 `c.typ` 中速查卡的排版参数（单栏，卡片布局）。
+参数以 L2 为基础设计；实际运行后如有调整请更新此处。
+
+## 核心参数
+
+### 页面（与 L1 相同边距，单栏不需要为双栏留余量）
+```typst
+#set page(
+  paper: "a4",
+  margin: (x: 2cm, top: 1.6cm, bottom: 1.3cm),
+)
+```
+
+### 字体与段落（与 L2 相同）
+```typst
+#set text(font: body-font, size: 9.5pt, lang: "zh")
+#set par(justify: true, leading: 0.75em, spacing: 0.55em)
+```
+
+## 卡片间距
+
+```typst
+// 卡片外框
+block(above: 0.6em, below: 0.2em,
+      inset: (left: 6pt, top: 5pt, bottom: 5pt, right: 3pt), ...)
+
+// 标题行（徽章 + 粗体标签）→ 内容
+block(below: 0.5em, ...)    // 与 L2 的 0.6em 略小；标题-内容间距略紧（速查卡密度更高）
+```
+
+设计依据：与 L2 相同的间距折叠原则（`max(above, below) ≥ leading`）。
+`block.below: 0.5em` < `leading: 0.75em`，但因速查卡内容多为短行（公式/条件列表），
+视觉上不会粘连。如测试后感觉标题与内容仍过近，可调为 `0.6em`。
+
+## 卡片类型颜色语义
+
+```typst
+公式 formula = rgb("#7d3c98")  // 紫：数字/计算，最精确
+规则 rule    = rgb("#d35400")  // 橙：条件判断，需注意
+对比 table   = rgb("#1a5ca8")  // 蓝：对比信息（与 QA 简答题同色，统一数据类语义）
+流程 flow    = rgb("#1e8449")  // 绿：操作流程，表示"动起来"
+```
+
+左色带与徽章同色（`stroke: (left: 2.5pt + type-color(t.type))`）。
+
+## 对比表渲染
+
+`table` 类型卡片的 body 为竖线分隔格式（` | ` 两侧带空格），在 Typst 中动态解析为表格：
+- 第一行 = 表头（蓝灰底色 `#dce6f1`，加粗 8.5pt）
+- 偶数数据行 = 浅灰底色 `#f5f7fa`
+- 列宽由 Typst 自动均分
