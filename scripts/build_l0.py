@@ -186,8 +186,12 @@ def build(keep_all: bool, stamp: bool) -> dict:
     with L0_OUT.open("wb") as f:
         writer.write(f)
 
+    # 重命名为中文产物名
+    cn_out = C.OUTPUTS_DIR / "清洗版PPT全集.pdf"
+    L0_OUT.replace(cn_out)
+
     C.write_json(C.L0_PAGEMAP_PATH, {
-        "output": str(L0_OUT),
+        "output": str(cn_out),
         "total_pages": final_page,
         "anchor_to_l0_page": pagemap,
     })
@@ -198,7 +202,7 @@ def build(keep_all: bool, stamp: bool) -> dict:
     })
 
     return {"total_pages": final_page, "deleted": len(deleted),
-            "warnings": warnings, "out": str(L0_OUT)}
+            "warnings": warnings, "out": str(cn_out)}
 
 
 def _stamp_last(writer, text: str) -> None:

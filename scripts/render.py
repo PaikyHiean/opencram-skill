@@ -31,6 +31,15 @@ TYPST_TARGETS = {
     "c":  ("c.typ",  "C.pdf",  C.WORK_DIR / "distilled" / "c.json"),
 }
 
+# 最终产物中文名映射（代号 → 中文文件名，不含 .pdf 后缀）
+CHINESE_NAMES: dict[str, str] = {
+    "l1": "核心知识手册",
+    "qa": "简答库",
+    "l2": "关键词索引",
+    "c":  "速查卡",
+    "m":  "思维导图",
+}
+
 
 def render_typst(target: str) -> Path:
     typst = C.find_typst()
@@ -68,9 +77,13 @@ def render(target: str) -> Path:
     all_targets = list(TYPST_TARGETS) + ["m"]
     if target not in all_targets:
         raise SystemExit(f"未知产物 '{target}'，可选：{', '.join(all_targets)}")
-    if target == "m":
-        return render_m()
-    return render_typst(target)
+    out = render_m() if target == "m" else render_typst(target)
+    cn = CHINESE_NAMES.get(target)
+    if cn:
+        dest = out.with_name(cn + ".pdf")
+        out.replace(dest)
+        out = dest
+    return out
 
 
 def main() -> int:
