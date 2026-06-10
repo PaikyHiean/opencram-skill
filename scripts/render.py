@@ -8,6 +8,7 @@ Typst 以 --root <skill_root> 编译，模板内用 root 相对路径读取 work
     python scripts/render.py qa            # 渲染 outputs/QA.pdf
     python scripts/render.py l2            # 渲染 outputs/L2.pdf
     python scripts/render.py c             # 渲染 outputs/C.pdf
+    python scripts/render.py m             # 渲染 outputs/M.pdf
     python scripts/render.py l1 --open     # 渲染后打开
 """
 
@@ -27,6 +28,7 @@ TARGETS = {
     "qa": ("qa.typ", "QA.pdf", C.WORK_DIR / "distilled" / "qa.json"),
     "l2": ("l2.typ", "L2.pdf", C.WORK_DIR / "distilled" / "l2.json"),
     "c":  ("c.typ",  "C.pdf",  C.WORK_DIR / "distilled" / "c.json"),
+    "m":  ("m.typ",  "M.pdf",  C.WORK_DIR / "distilled" / "m.json"),
 }
 
 
@@ -57,7 +59,7 @@ def render(target: str) -> Path:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="开卷考 skill 渲染")
-    ap.add_argument("target", help="产物代号：l1 | qa | l2 | c（后续 mindmap）")
+    ap.add_argument("target", help="产物代号：l1 | qa | l2 | c | m")
     ap.add_argument("--open", action="store_true", help="渲染后用系统默认程序打开")
     args = ap.parse_args()
 

@@ -294,9 +294,55 @@ python scripts/render.py c            # → outputs/C.pdf
 单栏布局，每章 navy 色块标题；每张卡片带类型徽章（紫/橙/蓝/绿）、左色带、内容与源指针；
 对比表类型自动解析为 Typst 表格。
 
-### Phase 10 · 其余产物（M）
-**本版尚未实现**，留作下一迭代：M 思维导图。
-实现时复用同一套锚点/映射/参考基准机制，渲染同样走 Typst（`render.py <target>`）。
+### Phase 10 · M（思维导图）
+
+M 以 **L1 蒸馏结果**为源（无需回溯原始 PPT），通过子 agent 按主题归纳分支，
+生成全局总览 + 逐章彩色卡片网格。
+
+#### 步骤一：切输入包
+```
+python scripts/prep_m.py
+```
+读 `work/distilled/l1.json`，按章提取小节标题/知识点，
+输出 `work/distilled/m/in_<k>.json` + `m/index.json`。
+
+#### 步骤二：子 agent 逐章归纳分支
+按 `m/index.json` 逐章派子 agent（角色定义见 `agents/mindmap.md`），
+每个只读自己那章的 `in_<k>.json`，把 17–46 小节按主题归纳为 6–12 个分支，产出 `out_<k>.json`：
+```json
+{
+  "chapter_index": 1,
+  "chapter_title": "第1章 财产保险概论",
+  "branches": [
+    {
+      "title": "概念与保险标的",
+      "nodes": [
+        "财产险以财产及有关利益为标的",
+        "可保利益须合法、确定、可用货币估量"
+      ]
+    }
+  ]
+}
+```
+- 分支标题 6–12 字，名词短语；节点 12–25 字，来自原文精简
+- 子 agent 只回简报（分支数/节点数），不回全文 JSON
+
+#### 步骤三：全局总览 agent
+由一个独立 agent（角色定义见 `agents/mindmap_global.md`）读取所有 `out_<k>.json` 的分支标题，
+推断课程名，产出 `out_global.json`（不修改任何分支标题）。
+
+#### 步骤四：合并
+```
+python scripts/merge_m.py
+```
+读 `out_global.json` + 所有 `out_<k>.json`，写 `work/distilled/m.json`。
+
+#### 步骤五：渲染
+```
+python scripts/render.py m            # → outputs/M.pdf
+```
+第一页为全局总览（章节 tile 网格，每章带彩色分支 pill）；
+后续每章一页（2 列分支卡片网格，12 色循环左边框）。
 
 ### Phase 11 · 复核（Coverage / 防臆造）
 - 每章都有产物？对照 `chapters.json`。
@@ -336,11 +382,17 @@ python scripts/render.py c            # → outputs/C.pdf
 | `work/distilled/c/in_<k>.json` | 第 k 章的速查卡 agent 输入包（含备注） |
 | `work/distilled/c/out_<k>.json` | 第 k 章的速查卡 agent 产出（规则/流程/对比/公式） |
 | `work/distilled/c.json` | C 速查卡主数据（合并后，供渲染） |
+| `work/distilled/m/index.json` | M 各章 k 值→输入/输出文件映射 |
+| `work/distilled/m/in_<k>.json` | 第 k 章的思维导图 agent 输入包（来自 l1.json） |
+| `work/distilled/m/out_<k>.json` | 第 k 章的思维导图 agent 产出（分支+节点） |
+| `work/distilled/m/out_global.json` | 全局总览 agent 产出（课程名+各章分支标题列表） |
+| `work/distilled/m.json` | M 思维导图主数据（合并后，供渲染） |
 | `outputs/L0.pdf` | 带书签清洗版全集 |
 | `outputs/L1.pdf` | 核心知识手册 |
 | `outputs/QA.pdf` | 简答/论述 QA 记录 |
 | `outputs/L2.pdf` | 关键词索引 |
 | `outputs/C.pdf` | 速查卡 |
+| `outputs/M.pdf` | 思维导图 |
 
 ## 安装为全局 skill
 把 `SKILL.md scripts/ templates/ agents/` 复制到 `~/.claude/skills/open-book-exam-courseware/`。

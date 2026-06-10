@@ -200,3 +200,81 @@ block(below: 0.5em, ...)    // 与 L2 的 0.6em 略小；标题-内容间距略�
 - 第一行 = 表头（蓝灰底色 `#dce6f1`，加粗 8.5pt）
 - 偶数数据行 = 浅灰底色 `#f5f7fa`
 - 列宽由 Typst 自动均分
+
+---
+
+# M 排版配置参考
+
+本文档记录 `m.typ` 中彩色思维导图卡片网格的排版参数（单栏，全局总览 + 逐章分支卡片）。
+
+## 核心参数
+
+### 页面（与 L1 相同，单栏不需为双栏留余量）
+```typst
+#set page(
+  paper: "a4",
+  margin: (x: 1.5cm, top: 1.4cm, bottom: 1.2cm),
+)
+```
+- 左右边距比 L1 略窄（1.5cm vs 2cm），为 2 列分支卡片网格留更多宽度
+
+### 字体与段落
+```typst
+#set text(font: body-font, size: 9pt, lang: "zh")
+#set par(justify: false, leading: 0.7em, spacing: 0.45em)
+```
+- `justify: false`：思维导图节点为短句，强制对齐反而会拉宽
+- `size: 9pt`：比 L2 小 0.5pt，节点密度更高
+
+## 颜色系统（双调色板）
+
+### 章节颜色（深色系，8 色循环）
+```
+ch-1 = rgb("#1a3a6b")  深蓝（海军）
+ch-2 = rgb("#6c3483")  深紫
+ch-3 = rgb("#a93226")  深红
+ch-4 = rgb("#b7770d")  暗金
+ch-5 = rgb("#1a6b3c")  深绿
+ch-6 = rgb("#1a5296")  皇家蓝
+ch-7 = rgb("#5d6d7e")  石板灰
+ch-8 = rgb("#117a65")  深松石
+```
+章节颜色用于：页面顶部标题色块背景、全局总览 tile 标题行背景、章节卡片边框颜色。
+
+### 分支颜色（彩色系，12 色循环）
+```
+br-0  = rgb("#e74c3c")  红
+br-1  = rgb("#e67e22")  橙
+br-2  = rgb("#d4ac0d")  金黄
+br-3  = rgb("#27ae60")  绿
+br-4  = rgb("#16a085")  松石
+br-5  = rgb("#2980b9")  蓝
+br-6  = rgb("#8e44ad")  紫
+br-7  = rgb("#c0392b")  深红
+br-8  = rgb("#1abc9c")  翡翠
+br-9  = rgb("#d35400")  橙红
+br-10 = rgb("#7d3c98")  深紫
+br-11 = rgb("#1a5ca8")  皇家蓝
+```
+分支颜色用于：分支卡片左边框（`3pt + br-color`）、卡片浅色背景（`br-color.lighten(90%)`）、
+分支标题文字、全局总览 tile 内的 pill 边框与背景（`br-color.lighten(85%)`）。
+
+## 分支卡片间距
+
+```typst
+// 分支卡片外框
+block(above: 0.5em, below: 0.2em,
+      inset: (left: 7pt, top: 5pt, bottom: 5pt, right: 5pt),
+      stroke: (left: 3pt + br-color), ...)
+
+// 分支标题行 → 节点列表
+block(below: 0.4em, ...)
+```
+
+设计依据：思维导图节点为短句（12–25 字），不需要 L2 词条的 `below: 0.6em`；
+`0.4em` 在 `leading: 0.7em` 下有轻微折叠，标题与内容之间有可辨识的层级感。
+
+## 布局说明
+
+- **全局总览页**：`grid(columns: 2)` 的章节 tile 网格，每个 tile 内用 inline `box` 展示分支 pill，自动换行
+- **逐章页**：`grid(columns: 2)` 的分支卡片网格，卡片高度由内容决定，Typst 自动处理高度差异
