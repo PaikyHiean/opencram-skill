@@ -58,7 +58,15 @@ def main() -> int:
         }
         chapters.append(ch)
         total_branches += len(branches)
-        total_nodes += sum(len(b.get("nodes", [])) for b in branches)
+        # 兼容 3 层（nodes 在 branch）和 4 层（nodes 在 subbranch）
+        if branches and "subbranches" in branches[0]:
+            total_nodes += sum(
+                len(sb.get("nodes", []))
+                for b in branches
+                for sb in b.get("subbranches", [])
+            )
+        else:
+            total_nodes += sum(len(b.get("nodes", [])) for b in branches)
 
     if missing:
         print(f"⚠ 以下章节 agent 输出缺失，已跳过：k = {missing}")

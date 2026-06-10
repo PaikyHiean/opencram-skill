@@ -192,6 +192,15 @@ def draw_global_overview(ax, global_data: dict, FW: float, FH: float):
 # ──────────────────────────────────────────────────────────
 
 def draw_chapter_mindmap(ax, chapter: dict, FW: float, FH: float):
+    """分派到 3 层或 4 层渲染，由 branches 中是否含 subbranches 决定。"""
+    brs = chapter.get("branches", [])
+    if brs and "subbranches" in brs[0]:
+        _draw_4level(ax, chapter, FW, FH)
+    else:
+        _draw_3level(ax, chapter, FW, FH)
+
+
+def _draw_3level(ax, chapter: dict, FW: float, FH: float):
     branches = chapter.get("branches", [])
     ch_idx = chapter.get("chapter_index", 1)
     ch_title = chapter.get("chapter_title", "")
@@ -357,6 +366,173 @@ def draw_chapter_mindmap(ax, chapter: dict, FW: float, FH: float):
                     ha="left", va="center",
                     fontsize=node_fs, color="#1a1a1a",
                     linespacing=1.3, zorder=4)
+
+
+# ──────────────────────────────────────────────────────────
+# 4 层树形：Chapter → L2 Branch → L3 SubBranch → L4 Node
+# ──────────────────────────────────────────────────────────
+
+def _draw_4level(ax, chapter: dict, FW: float, FH: float):
+    branches = chapter.get("branches", [])
+    ch_idx   = chapter.get("chapter_index", 1)
+    ch_title = chapter.get("chapter_title", "")
+    cc = ch_color(ch_idx)
+
+    if not branches:
+        return
+
+    # ── 几何常量（A4 纵向，单位英寸） ──
+    ML, MR, MT, MB = 0.18, 0.16, 0.28, 0.28
+    ROOT_W = 0.90;  ROOT_X = ML          # 0.18…1.08
+    T1_X   = ROOT_X + ROOT_W + 0.12      # 1.20
+    BR_X   = T1_X  + 0.10                # 1.30  L2 分支框左边
+    BR_W   = 1.00
+    T2_X   = BR_X  + BR_W  + 0.10        # 2.40
+    SB_X   = T2_X  + 0.08                # 2.48  L3 子分支框左边
+    SB_W   = 0.82
+    T3_X   = SB_X  + SB_W  + 0.10        # 3.40
+    NODE_X = T3_X  + 0.08                # 3.48  L4 文字起点
+    # 可用文字宽度 ≈ 4.6 英寸
+
+    Y_TOP, Y_BOT = FH - MT, MB
+    AVAIL_H = Y_TOP - Y_BOT
+
+    SINGLE_LINE_CHARS = 30
+    MIN_SLOT_H = 0.115
+
+    # ── 展平所有 L4 节点 ──
+    flat: list[tuple[int, int, int, str]] = []   # (bi, si, ni, text)
+    for bi, b in enumerate(branches):
+        for si, sb in enumerate(b.get("subbranches", []) or []):
+            nodes = sb.get("nodes", []) or [""]
+            for ni, text in enumerate(nodes):
+                flat.append((bi, si, ni, text))
+
+    if not flat:
+        return
+
+    lcs = [2 if len(t) > SINGLE_LINE_CHARS else 1 for *_, t in flat]
+    total_slots = sum(lcs)
+    slot_h = AVAIL_H / total_slots if total_slots else AVAIL_H
+
+    # 自适应降级
+    if slot_h < MIN_SLOT_H:
+        lcs = [1] * len(flat)
+        total_slots = len(flat)
+        slot_h = AVAIL_H / total_slots
+
+    # ── 分配 y 坐标 ──
+    ys: list[float] = []
+    cursor = 0
+    for lc in lcs:
+        ys.append(Y_TOP - (cursor + lc / 2) * slot_h)
+        cursor += lc
+
+    node_y   = {(bi, si, ni): y  for (bi, si, ni, _), y  in zip(flat, ys)}
+    node_lc  = {(bi, si, ni): lc for (bi, si, ni, _), lc in zip(flat, lcs)}
+    node_txt = {(bi, si, ni): t  for bi, si, ni, t in flat}
+
+    from collections import defaultdict
+    sb_nodes: dict = defaultdict(list)
+    br_nodes: dict = defaultdict(list)
+    for bi, si, ni, _ in flat:
+        sb_nodes[(bi, si)].append(ni)
+        br_nodes[bi].append((si, ni))
+
+    def _cy(vals): return (max(vals) + min(vals)) / 2
+
+    sb_cy = {k: _cy([node_y[(k[0], k[1], ni)] for ni in nis])
+             for k, nis in sb_nodes.items()}
+    br_cy = {bi: _cy([node_y[(bi, si, ni)] for si, ni in pairs])
+             for bi, pairs in br_nodes.items()}
+
+    # 字号
+    if slot_h >= 0.26:   node_fs = 8.0
+    elif slot_h >= 0.18: node_fs = 7.5
+    elif slot_h >= 0.14: node_fs = 7.0
+    else:                node_fs = 6.5
+
+    # ── 根节点 ──
+    root_cy = (Y_TOP + Y_BOT) / 2
+    root_h  = max(min(AVAIL_H * 0.18, 0.80), 0.55)
+    rbox(ax, ROOT_X, root_cy - root_h / 2, ROOT_W, root_h, cc,
+         split_chapter_title(ch_title), fontsize=7.5, fc="white", zorder=4)
+    ax.plot([ROOT_X + ROOT_W, T1_X], [root_cy, root_cy],
+            color=cc, lw=1.5, solid_capstyle="round", zorder=2)
+
+    # T1 垂直干线
+    br_cys_list = [br_cy[bi] for bi in range(len(branches)) if bi in br_cy]
+    if len(br_cys_list) > 1:
+        ax.plot([T1_X, T1_X], [min(br_cys_list), max(br_cys_list)],
+                color=cc, lw=1.5, solid_capstyle="round", zorder=2)
+
+    for bi, b in enumerate(branches):
+        if bi not in br_cy:
+            continue
+        bcy  = br_cy[bi]
+        bc   = br_color(bi)
+        subs = b.get("subbranches", []) or []
+
+        # T1 → L2 分支框
+        ax.plot([T1_X, BR_X], [bcy, bcy], color=cc, lw=1.5, solid_capstyle="round", zorder=2)
+        b_ys    = [node_y[(bi, si, ni)] for si, ni in br_nodes[bi]]
+        b_span  = (max(b_ys) - min(b_ys)) + slot_h
+        br_h    = max(min(b_span * 0.38, 0.46), 0.20)
+        rbox(ax, BR_X, bcy - br_h / 2, BR_W, br_h, bc,
+             b.get("title", ""), fontsize=7.5, fc="white", zorder=4)
+
+        # L2 → T2 水平线
+        ax.plot([BR_X + BR_W, T2_X], [bcy, bcy], color=bc, lw=0.9, solid_capstyle="round", zorder=2)
+
+        # T2 垂直干线
+        sb_cys_list = [sb_cy[(bi, si)] for si in range(len(subs)) if (bi, si) in sb_cy]
+        if len(sb_cys_list) > 1:
+            ax.plot([T2_X, T2_X], [min(sb_cys_list), max(sb_cys_list)],
+                    color=bc, lw=0.9, solid_capstyle="round", zorder=2)
+
+        for si, sb in enumerate(subs):
+            if (bi, si) not in sb_cy:
+                continue
+            scy = sb_cy[(bi, si)]
+            sc  = br_color((bi * 3 + si + 5) % 12)
+
+            # T2 → L3 子分支框
+            ax.plot([T2_X, SB_X], [scy, scy], color=bc, lw=0.9, solid_capstyle="round", zorder=2)
+            s_ys   = [node_y[(bi, si, ni)] for ni in sb_nodes[(bi, si)]]
+            s_span = (max(s_ys) - min(s_ys)) + slot_h
+            sb_h   = max(min(s_span * 0.38, 0.36), 0.16)
+            rbox(ax, SB_X, scy - sb_h / 2, SB_W, sb_h, sc,
+                 sb.get("title", ""), fontsize=7, fc="white", zorder=4)
+
+            # L3 → T3 水平线
+            ax.plot([SB_X + SB_W, T3_X], [scy, scy], color=sc, lw=0.7, solid_capstyle="round", zorder=2)
+
+            # T3 垂直干线
+            node_ys_here = [node_y[(bi, si, ni)] for ni in sb_nodes[(bi, si)]]
+            if len(node_ys_here) > 1:
+                ax.plot([T3_X, T3_X], [min(node_ys_here), max(node_ys_here)],
+                        color=sc, lw=0.7, solid_capstyle="round", zorder=2)
+
+            for ni in sb_nodes[(bi, si)]:
+                ny  = node_y[(bi, si, ni)]
+                lc  = node_lc[(bi, si, ni)]
+                txt = node_txt[(bi, si, ni)]
+
+                ax.plot([T3_X, NODE_X], [ny, ny], color=sc, lw=0.6, solid_capstyle="round", zorder=2)
+
+                if lc == 2 and len(txt) > SINGLE_LINE_CHARS:
+                    l1 = txt[:SINGLE_LINE_CHARS]
+                    l2 = txt[SINGLE_LINE_CHARS:]
+                    if len(l2) > SINGLE_LINE_CHARS - 1:
+                        l2 = l2[:SINGLE_LINE_CHARS - 2] + "…"
+                    display = l1 + "\n" + l2
+                else:
+                    display = txt if len(txt) <= SINGLE_LINE_CHARS else txt[:SINGLE_LINE_CHARS - 1] + "…"
+
+                ax.text(NODE_X + 0.05, ny, display,
+                        ha="left", va="center",
+                        fontsize=node_fs, color="#1a1a1a",
+                        linespacing=1.3, zorder=4)
 
 
 # ──────────────────────────────────────────────────────────
