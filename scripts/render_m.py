@@ -181,7 +181,7 @@ def draw_global_overview(ax, global_data: dict, FW: float, FH: float):
                 linewidth=0.4, edgecolor=bc,
                 facecolor=lighten(bc, 0.82), zorder=3,
             ))
-            label = b if len(b) <= 9 else b[:8] + "…"
+            label = b if len(b) <= 20 else b[:19] + "…"
             ax.text(px + pill_w / 2, py + pill_h / 2, label,
                     ha="center", va="center",
                     fontsize=6.5, color=bc, fontweight="bold", zorder=4)
@@ -213,43 +213,77 @@ def draw_chapter_mindmap(ax, chapter: dict, FW: float, FH: float):
     Y_TOP, Y_BOT = FH - MT, MB
     AVAIL_H = Y_TOP - Y_BOT
 
-    # ── 自适应节点数：保证最小槽高可读 ──
-    MIN_SLOT_H = 0.21    # 最小 0.21 英寸/节点，确保单行可读
-    raw_counts = [len(b.get("nodes", [])) for b in branches]
-    total_raw = sum(max(n, 1) for n in raw_counts)
-    max_total = max(int(AVAIL_H / MIN_SLOT_H), len(branches))  # 至少每分支1槽
+    # NODE_X 到右边距可用宽度 ≈ 7.6 英寸，8pt 中文约可放 70 字
+    # 单行上限取保守值 40，超过则换行显示（最多 2 行）
+    SINGLE_LINE_CHARS = 40
+    # 最小槽高（6.5pt 可读下限），最多可放 ≈ 67 节点
+    MIN_SLOT_H = 0.115
 
-    if total_raw > max_total:
-        # 等比例缩减：每分支至少保留 2 个节点
+    # ── 预处理：为每个节点确定行数（1 或 2） ──
+    branch_texts: list[list[str]] = []
+    branch_lcs:   list[list[int]] = []   # lc = line_count per node
+    for b in branches:
+        nodes = b.get("nodes", [])
+        if not nodes:
+            branch_texts.append([""])
+            branch_lcs.append([1])
+            continue
+        branch_texts.append(list(nodes))
+        branch_lcs.append([2 if len(t) > SINGLE_LINE_CHARS else 1 for t in nodes])
+
+    def _total_slots(blcs: list[list[int]]) -> int:
+        return sum(sum(lc) for lc in blcs)
+
+    total_slots = _total_slots(branch_lcs)
+    slot_h = AVAIL_H / total_slots if total_slots else AVAIL_H
+
+    # ── 自适应降级 1：太密时把两行节点降为单行（截断） ──
+    extra_counts = [0] * len(branches)
+    if slot_h < MIN_SLOT_H:
+        branch_lcs = [[1] * len(lc) for lc in branch_lcs]
+        total_slots = _total_slots(branch_lcs)
+        slot_h = AVAIL_H / total_slots if total_slots else AVAIL_H
+
+    # ── 自适应降级 2：仍然太密时按比例减少节点数（最后手段） ──
+    if slot_h < MIN_SLOT_H:
+        max_total = max(int(AVAIL_H / MIN_SLOT_H), len(branches))
+        raw_counts = [len(lc) for lc in branch_lcs]
+        total_raw = sum(max(n, 1) for n in raw_counts)
         ratio = max_total / total_raw
         node_counts = [max(int(n * ratio), min(2, n)) for n in raw_counts]
-    else:
-        node_counts = [max(n, 1) for n in raw_counts]
+        extra_counts = [max(raw_counts[k] - node_counts[k], 0)
+                        for k in range(len(branches))]
+        branch_texts = [t[:node_counts[k]] for k, t in enumerate(branch_texts)]
+        branch_lcs   = [[1] * node_counts[k] for k in range(len(branches))]
+        total_slots  = _total_slots(branch_lcs)
+        slot_h = AVAIL_H / total_slots if total_slots else AVAIL_H
 
-    # 剩余节点数（用于 "+N" 提示）
-    extra_counts = [max(raw_counts[i] - node_counts[i], 0) for i in range(len(branches))]
-
-    total_slots = sum(node_counts)
-    slot_h = AVAIL_H / total_slots
-
-    # 节点字号：根据槽高动态调整
+    # ── 字号：根据槽高动态调整 ──
     if slot_h >= 0.26:
-        node_fs, max_chars = 8.0, 24
-    elif slot_h >= 0.20:
-        node_fs, max_chars = 7.5, 22
+        node_fs = 8.0
+    elif slot_h >= 0.18:
+        node_fs = 7.5
+    elif slot_h >= 0.14:
+        node_fs = 7.0
     else:
-        node_fs, max_chars = 7.0, 20
+        node_fs = 6.5
 
-    # 计算各分支中心 y 和各叶节点 y
-    branch_cys, all_node_ys = [], []
+    # ── 计算各分支中心 y 和各叶节点 y（考虑多行节点占多槽） ──
+    branch_cys: list[float] = []
+    all_node_ys: list[list[float]] = []
     cursor = 0
-    for nc in node_counts:
+    for lcs in branch_lcs:
+        br_slots = sum(lcs)
         top_y = Y_TOP - cursor * slot_h
-        bot_y = Y_TOP - (cursor + nc) * slot_h
+        bot_y = Y_TOP - (cursor + br_slots) * slot_h
         branch_cys.append((top_y + bot_y) / 2)
-        nys = [Y_TOP - (cursor + j + 0.5) * slot_h for j in range(nc)]
+        nys: list[float] = []
+        sub = 0
+        for lc in lcs:
+            nys.append(Y_TOP - (cursor + sub + lc / 2) * slot_h)
+            sub += lc
         all_node_ys.append(nys)
-        cursor += nc
+        cursor += br_slots
 
     root_cy = (Y_TOP + Y_BOT) / 2
     root_h = max(min(AVAIL_H * 0.36, slot_h * 8), 0.9)
@@ -271,20 +305,21 @@ def draw_chapter_mindmap(ax, chapter: dict, FW: float, FH: float):
 
     for i, (b, br_cy, node_ys) in enumerate(zip(branches, branch_cys, all_node_ys)):
         bc = br_color(i)
-        nc = node_counts[i]
+        lcs   = branch_lcs[i]
+        texts = branch_texts[i]
         extra = extra_counts[i]
+        br_slots = sum(lcs)
 
         # T1 → 分支节点
         ax.plot([T1_X, BR_X], [br_cy, br_cy],
                 color=cc, lw=1.8, solid_capstyle="round", zorder=2)
 
-        # 分支节点框
-        br_h = max(min(slot_h * nc * 0.55, 0.40), 0.22)
+        # 分支节点框（高度随分支占据槽数等比缩放，上限放宽到 0.55）
+        br_h = max(min(br_slots * slot_h * 0.55, 0.55), 0.22)
         rbox(ax, BR_X, br_cy - br_h / 2, BR_W, br_h,
              bc, b["title"], fontsize=8, fc="white", zorder=4)
 
-        nodes = b.get("nodes", [])[:nc]   # 只取限定数量
-        if not nodes:
+        if not texts or texts == [""]:
             continue
 
         # 分支→T2 水平线
@@ -296,21 +331,31 @@ def draw_chapter_mindmap(ax, chapter: dict, FW: float, FH: float):
             ax.plot([T2_X, T2_X], [node_ys[-1], node_ys[0]],
                     color=bc, lw=1.0, solid_capstyle="round", zorder=2)
 
-        for j, (node_text, ny) in enumerate(zip(nodes, node_ys)):
+        for j, (node_text, ny, lc) in enumerate(zip(texts, node_ys, lcs)):
             # T2 → 叶节点水平线
             ax.plot([T2_X, NODE_X], [ny, ny],
                     color=bc, lw=0.8, solid_capstyle="round", zorder=2)
 
-            # 叶节点文字
-            is_last = (j == len(nodes) - 1)
-            if is_last and extra > 0:
-                display = trunc(node_text, max_chars - 4) + f" +{extra}"
+            is_last = (j == len(texts) - 1)
+            suffix = f" +{extra}" if (is_last and extra > 0) else ""
+
+            if lc == 2 and len(node_text) > SINGLE_LINE_CHARS:
+                # 两行换行显示
+                line1 = node_text[:SINGLE_LINE_CHARS]
+                rest  = node_text[SINGLE_LINE_CHARS:]
+                if len(rest) > SINGLE_LINE_CHARS - 1:
+                    rest = rest[:SINGLE_LINE_CHARS - 2] + "…"
+                display = line1 + "\n" + rest + suffix
             else:
-                display = trunc(node_text, max_chars)
+                # 单行显示（含降级后截断情形）
+                cap = SINGLE_LINE_CHARS - len(suffix)
+                t = node_text if len(node_text) <= cap else node_text[:cap - 1] + "…"
+                display = t + suffix
 
             ax.text(NODE_X + 0.06, ny, display,
                     ha="left", va="center",
-                    fontsize=node_fs, color="#1a1a1a", zorder=4)
+                    fontsize=node_fs, color="#1a1a1a",
+                    linespacing=1.3, zorder=4)
 
 
 # ──────────────────────────────────────────────────────────
