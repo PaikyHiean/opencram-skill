@@ -95,6 +95,7 @@ def build_ai_chapter(out: dict, reference_base: str, l0map: dict,
             "tables": sec.get("tables", []),
             "images": _section_images(anchors, cache, img_cap) if anchors else [],
             "ai_generated": bool(sec.get("ai_generated", True)),
+            "source_anchors": anchors,
         })
     return {"title": out.get("chapter_title", ""), "sections": sections}
 

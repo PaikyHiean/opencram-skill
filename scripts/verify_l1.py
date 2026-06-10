@@ -27,7 +27,7 @@ def main() -> int:
             # 锚点必须能解析且来源存在
             for a in sec.get("points", []):
                 pass  # points 本身不存锚点
-            for a in (sec.get("anchors") or []):
+            for a in (sec.get("source_anchors") or []):
                 try:
                     name, idx = C.parse_anchor(a)
                 except Exception:

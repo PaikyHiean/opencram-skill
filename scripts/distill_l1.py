@@ -158,7 +158,7 @@ def distill(level: str, with_images: bool, img_cap: int) -> dict:
             for i, pt in enumerate(sec["points"], 1):
                 pt["num"] = f"{i}."
             sec["pointer"] = _pointer(sec["anchors"], reference_base, l0map)
-            del sec["anchors"]
+            sec["source_anchors"] = sec.pop("anchors")
         out_chapters.append({"title": ch_title, "sections": sections})
 
     return {
