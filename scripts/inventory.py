@@ -107,6 +107,9 @@ def scan(folder: Path, recursive: bool) -> dict:
                 "note": "旧版 .ppt：将在抽取阶段经 LibreOffice 转换后确认文字层",
             })
         sources.append(entry)
+        if len(sources) > 500:
+            C.eprint("⚠ 已超过 500 个匹配文件，停止扫描。请检查路径是否正确（避免指向根目录）。")
+            break
 
     warnings = []
     for s in sources:

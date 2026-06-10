@@ -115,11 +115,9 @@
 #v(0.5em)
 
 // ---- 正文 ----
-#let first = true
-#for ch in data.chapters {
+#for (i, ch) in data.chapters.enumerate() {
   if ch.items.len() > 0 {
-    chapter-head(ch.title, first)
-    first = false
+    chapter-head(ch.title, i == 0)
     for item in ch.items { qa-item(item) }
   }
 }

@@ -144,11 +144,9 @@
 })
 
 // ---- 正文（每章：章头 + 卡片列表）----
-#let first = true
-#for ch in data.chapters {
+#for (i, ch) in data.chapters.enumerate() {
   if ch.cards.len() > 0 {
-    chapter-head(ch.title, first)
-    first = false
+    chapter-head(ch.title, i == 0)
     for t in ch.cards {
       card-block(t)
     }

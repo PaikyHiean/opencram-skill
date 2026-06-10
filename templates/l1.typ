@@ -121,12 +121,10 @@
 #v(0.4em)
 
 // ---- 正文 ----
-#let first = true
-#for ch in data.chapters {
+#for (i, ch) in data.chapters.enumerate() {
   let secs = ch.sections.filter(s => s.points.len() > 0 or s.images.len() > 0 or s.tables.len() > 0)
   if secs.len() > 0 {
-    chapter-head(ch.title, first)
-    first = false
+    chapter-head(ch.title, i == 0)
     for sec in secs { section(sec) }
   }
 }

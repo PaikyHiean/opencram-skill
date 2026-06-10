@@ -114,6 +114,7 @@ def main() -> int:
     cache = _ContentCache()
 
     chapters = list(baseline["chapters"])  # 兜底基线，逐章可被 AI 覆盖
+    ch_title_to_idx = {c["title"]: i for i, c in enumerate(chapters)}
     ai_done = []
     for it in index["chapters"]:
         k = it["k"]
@@ -121,8 +122,13 @@ def main() -> int:
         out = C.read_json(out_path)
         if not out:
             continue  # 该章未蒸馏，保留基线
-        chapters[k - 1] = build_ai_chapter(out, reference_base, l0map, cache, img_cap=3)
-        ai_done.append(it["chapter_title"])
+        out_title = out.get("chapter_title", "")
+        idx = ch_title_to_idx.get(out_title)
+        if idx is None:
+            C.eprint(f"⚠ AI 章节 '{out_title}'（k={k}）与基线标题不匹配，跳过。")
+            continue
+        chapters[idx] = build_ai_chapter(out, reference_base, l0map, cache, img_cap=3)
+        ai_done.append(out_title)
 
     n_sections = sum(len(c["sections"]) for c in chapters)
     meta = dict(meta)

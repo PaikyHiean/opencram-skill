@@ -108,11 +108,9 @@
 })
 
 // ---- 正文（每章：章头全宽 + 双栏词条）----
-#let first = true
-#for ch in data.chapters {
+#for (i, ch) in data.chapters.enumerate() {
   if ch.terms.len() > 0 {
-    chapter-head(ch.title, first)
-    first = false
+    chapter-head(ch.title, i == 0)
     columns(2, gutter: 1.2em)[
       #for t in ch.terms {
         term-block(t)

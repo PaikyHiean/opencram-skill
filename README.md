@@ -218,6 +218,58 @@ L1 里每一个小节标题旁都有一个灰色的来源指针，比如：
 
 ---
 
+## 常见问题排查
+
+### ❌ LibreOffice 转换失败 / `soffice` 找不到
+
+**原因**：LibreOffice 未安装，或安装路径含中文/空格导致脚本找不到可执行文件。
+
+**解决**：
+1. 确认 LibreOffice 已安装：运行 `python scripts/doctor.py`，看 `LibreOffice` 一行是否为 ✅。
+2. 若仍失败，手动在 `work/config.json` 中添加绝对路径：
+   ```json
+   { "soffice_path": "C:/Program Files/LibreOffice/program/soffice.exe" }
+   ```
+3. Windows 用户：安装路径建议保持默认（`C:\Program Files\LibreOffice`），不要改到含中文或空格的目录。
+
+---
+
+### ❌ Typst 渲染失败：`font not found` / 中文变方块
+
+**原因**：Typst 找不到 `work/config.json` 中指定的 `cjk_font` 字体族名。
+
+**解决**：
+1. 运行 `python scripts/doctor.py`，查看 `中文字体` 一行命中了哪些字体名。
+2. 把 `work/config.json` 的 `cjk_font` 改为命中列表中的某个名字（常见值：`Microsoft YaHei`、`SimHei`、`Noto Sans CJK SC`）：
+   ```json
+   { "cjk_font": "Microsoft YaHei" }
+   ```
+3. 重新运行 `python scripts/render.py l1`（或对应产物）。
+
+---
+
+### ⚠️ 某个 PPT 文字抽取近零 / L1 里该章内容为空
+
+**原因**：该 PPT 是**扫描版**（图片 PDF 转的 PPT），没有可识别的文字层。本 skill 不做 OCR，无法从图片中提取文字。
+
+**解决**：
+- 运行 `python scripts/doctor.py` 或查看 `work/manifest.json`，`text_layer: "suspect_none"` 的文件即为疑似扫描件。
+- 这类文件会被加入 L0（保留原页），但 L1/L2/C/QA/M 里不会有对应内容。
+- 如果原版有文字版 PPT，换用文字版重新运行；或手动把关键内容粘贴进一个新 PPT 再处理。
+
+---
+
+### ⚠️ L1 某些章节没有 AI 增强 / `work/distilled/ai/out_<k>.json` 缺失
+
+**原因**：AI 蒸馏子 agent 需要 orchestrator（你与 Claude 的对话）**显式派发**。如果你直接运行了 `merge_ai_l1.py` 但没有先派发子 agent，对应的 `out_k.json` 文件就不存在，该章会回退到确定性基线。
+
+**解决**：
+- 在 Claude Code 对话中，告诉 Claude："帮我对第 k 章运行 AI 蒸馏 agent"，Claude 会按 `agents/distillation.md` 的角色说明派发 Task 子 agent。
+- 派发完成后再运行 `python scripts/merge_ai_l1.py`，缺失的章节会用基线版兜底，有 `out_k.json` 的章节用 AI 版覆盖。
+- 缺哪几章可以查 `work/distilled/ai/` 目录，不存在 `out_<k>.json` 的 k 值即为待派发。
+
+---
+
 ## 参与贡献 / 反馈
 
 有 bug、想要新产物（L2/C/M/QA）、或者遇到某些课件处理出错？
