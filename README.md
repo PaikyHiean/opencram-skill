@@ -133,10 +133,16 @@
    ```
    或者直接点页面右上角的 **Code → Download ZIP** 解压。
 
-2. 把这个 skill 告诉 Claude Code：
-   在 Claude Code 中输入：
+2. 把这个 skill 复制到 Claude Code 的 skills 目录：
+
+   **Windows PowerShell**
+   ```powershell
+   Copy-Item -Recurse ".\opencram-skill" "$env:USERPROFILE\.claude\skills\"
    ```
-   /skills add <你刚才下载/解压的路径>
+
+   **macOS / Linux**
+   ```bash
+   cp -r ./opencram-skill ~/.claude/skills/
    ```
 
 3. 把所有课件 PPT 放进一个文件夹（比如 `D:\期末复习\财产保险`）。

@@ -214,7 +214,8 @@ def installed_font_names() -> list[str]:
 
 
 def has_cjk_font() -> tuple[bool, list[str]]:
-    """返回 (是否具备中文字体, 命中的字体名列表)。"""
+    """返回 (是否具备中文字体, 命中的字体名列表)。
+    注：此处为子串匹配，属尽力而为——命中不等于 Typst/matplotlib 一定能按族名加载同名字体。"""
     installed = installed_font_names()
     joined = "\n".join(installed)
     hits = [f for f in PREFERRED_CJK_FONTS if f in joined]

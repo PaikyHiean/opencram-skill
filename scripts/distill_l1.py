@@ -97,6 +97,8 @@ def _pointer(anchors: list[str], reference_base: str, l0map: dict) -> str:
 def distill(level: str, with_images: bool, img_cap: int) -> dict:
     cfg = C.load_config()
     reference_base = cfg.get("reference_base", "source")
+    if reference_base == "l0" and not C.L0_PAGEMAP_PATH.exists():
+        C.eprint("⚠  reference_base=l0 但 l0_pagemap.json 不存在——请先运行 build_l0.py，或在 config.json 中改为 source。")
     l0map = C.read_json(C.L0_PAGEMAP_PATH, {}) or {}
     chapters_doc = C.read_json(C.CHAPTERS_PATH)
     if not chapters_doc:

@@ -1,5 +1,5 @@
 """
-extract.py — Phase 3 抽取（确定性，按文件处理）。
+extract.py — Phase 4 抽取（确定性，按文件处理）。
 
 对每个源文件：
   1. LibreOffice 转 PDF（建 L0 页空间；1 幻灯片 ≈ 1 PDF 页）。
@@ -269,8 +269,8 @@ def process_source(soffice: str, src_entry: dict) -> dict:
                 "notes": s["notes"],
                 "images": s["images"],
                 "text_chars": s["text_chars"],
-                "decorative": _decorative_hint(s)[0],
-                "decorative_reason": _decorative_hint(s)[1],
+                "decorative": (_dec := _decorative_hint(s))[0],
+                "decorative_reason": _dec[1],
             }
             for s in slides
         ],
@@ -297,8 +297,8 @@ def process_source(soffice: str, src_entry: dict) -> dict:
                 "text_chars": s["text_chars"],
                 "n_images": len(s["images"]),
                 "has_notes": bool(s["notes"]),
-                "decorative": _decorative_hint(s)[0],
-                "decorative_reason": _decorative_hint(s)[1],
+                "decorative": (_dec := _decorative_hint(s))[0],
+                "decorative_reason": _dec[1],
             }
             for s in slides
         ],
