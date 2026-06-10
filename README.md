@@ -129,7 +129,7 @@
 
 1. 克隆或下载本仓库到任意位置：
    ```
-   git clone https://github.com/PaikyHiean/open-book-skill.git
+   git clone https://github.com/PaikyHiean/opencram-skill.git
    ```
    或者直接点页面右上角的 **Code → Download ZIP** 解压。
 
@@ -215,4 +215,4 @@ L1 里每一个小节标题旁都有一个灰色的来源指针，比如：
 ## 参与贡献 / 反馈
 
 有 bug、想要新产物（L2/C/M/QA）、或者遇到某些课件处理出错？
-欢迎提 [Issue](https://github.com/PaikyHiean/open-book-skill/issues) 或 Pull Request。
+欢迎提 [Issue](https://github.com/PaikyHiean/opencram-skill/issues) 或 Pull Request。
