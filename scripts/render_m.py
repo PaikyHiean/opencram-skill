@@ -130,59 +130,86 @@ def draw_global_overview(ax, global_data: dict, FW: float, FH: float):
          fontsize=13, fc="white")
 
     n = len(chapters)
+    if n == 0:
+        return
     ncols = 2
     nrows = (n + 1) // 2
-    gx, gy = 0.15, 0.12
-    tile_w = (FW - gx * (ncols + 1)) / ncols
+
+    GX, GY       = 0.15, 0.14   # 卡片水平/垂直间距
+    TITLE_H      = 0.44          # 章节标题栏固定高度
+    PILL_H       = 0.28          # pill 高度
+    PILL_GAP_X   = 0.07          # pill 横向间距
+    PILL_GAP_Y   = 0.09          # pill 纵向间距
+    CARD_PAD_TOP = 0.10          # 标题栏下方到首个 pill 的留白
+    CARD_PAD_BOT = 0.12          # 最后 pill 行到卡片底部的留白
+
+    tile_w = (FW - GX * (ncols + 1)) / ncols
+    pill_w = (tile_w - 0.10) / 2 - PILL_GAP_X / 2
+
+    # 每个显示行所需最大 pill 行数 → 决定该行卡片高度
+    def row_tight_h(pill_rows: int) -> float:
+        return TITLE_H + CARD_PAD_TOP + pill_rows * (PILL_H + PILL_GAP_Y) - PILL_GAP_Y + CARD_PAD_BOT
+
+    row_heights = []
+    for r in range(nrows):
+        max_pr = 0
+        for c in range(ncols):
+            idx = r * ncols + c
+            if idx < n:
+                br_count = len(chapters[idx].get("branches", []))
+                max_pr = max(max_pr, (br_count + 1) // 2)
+        row_heights.append(row_tight_h(max(max_pr, 1)))
+
     content_top = FH - hh - 0.40
-    content_h = content_top - 0.12
-    tile_h = (content_h - gy * (nrows + 1)) / nrows
+    y_cursor = content_top - GY   # 当前行卡片顶部 y
 
-    for idx, ch in enumerate(chapters):
-        col = idx % ncols
-        row = idx // ncols
-        tx = gx + col * (tile_w + gx)
-        ty = content_top - gy - row * (tile_h + gy) - tile_h
+    for row_idx in range(nrows):
+        tile_h = row_heights[row_idx]
 
-        cc = ch_color(ch.get("chapter_index", idx + 1))
-
-        # 卡片边框
-        ax.add_patch(FancyBboxPatch(
-            (tx, ty), tile_w, tile_h,
-            boxstyle="round,pad=0.02",
-            linewidth=0.6, edgecolor=cc,
-            facecolor="#fafafa", zorder=2,
-        ))
-
-        # 章节标题栏
-        th = tile_h * 0.24
-        rbox(ax, tx, ty + tile_h - th, tile_w, th, cc,
-             ch["chapter_title"], fontsize=8.5, fc="white", zorder=3)
-
-        # 分支 pill（每行 2 个）
-        branches = ch.get("branches", [])
-        pill_h = 0.18
-        pill_gap_x, pill_gap_y = 0.06, 0.05
-        pill_w = (tile_w - 0.10) / 2 - pill_gap_x / 2
-        row_start_y = ty + tile_h - th - pill_h - 0.08
-
-        for j, b in enumerate(branches):
-            pc, pr = j % 2, j // 2
-            px = tx + 0.05 + pc * (pill_w + pill_gap_x)
-            py = row_start_y - pr * (pill_h + pill_gap_y)
-            if py < ty + 0.04:
+        for col_idx in range(ncols):
+            idx = row_idx * ncols + col_idx
+            if idx >= n:
                 break
-            bc = br_color(j)
+            ch = chapters[idx]
+            tx = GX + col_idx * (tile_w + GX)
+            ty = y_cursor - tile_h
+            cc = ch_color(ch.get("chapter_index", idx + 1))
+
+            # 卡片边框
             ax.add_patch(FancyBboxPatch(
-                (px, py), pill_w, pill_h,
-                boxstyle="round,pad=0.01",
-                linewidth=0.4, edgecolor=bc,
-                facecolor=lighten(bc, 0.82), zorder=3,
+                (tx, ty), tile_w, tile_h,
+                boxstyle="round,pad=0.02",
+                linewidth=0.8, edgecolor=cc,
+                facecolor="#fafafa", zorder=2,
             ))
-            label = b if len(b) <= 20 else b[:19] + "…"
-            ax.text(px + pill_w / 2, py + pill_h / 2, label,
-                    ha="center", va="center",
-                    fontsize=6.5, color=bc, fontweight="bold", zorder=4)
+
+            # 章节标题栏（固定高度）
+            rbox(ax, tx, ty + tile_h - TITLE_H, tile_w, TITLE_H, cc,
+                 ch["chapter_title"], fontsize=10, fc="white", zorder=3)
+
+            # 分支 pill（每行 2 个）
+            branches = ch.get("branches", [])
+            row_start_y = ty + tile_h - TITLE_H - CARD_PAD_TOP - PILL_H
+
+            for j, b in enumerate(branches):
+                pc, pr = j % 2, j // 2
+                px = tx + 0.05 + pc * (pill_w + PILL_GAP_X)
+                py = row_start_y - pr * (PILL_H + PILL_GAP_Y)
+                if py < ty + CARD_PAD_BOT / 2:
+                    break
+                bc = br_color(j)
+                ax.add_patch(FancyBboxPatch(
+                    (px, py), pill_w, PILL_H,
+                    boxstyle="round,pad=0.01",
+                    linewidth=0.5, edgecolor=bc,
+                    facecolor=lighten(bc, 0.82), zorder=3,
+                ))
+                label = b if len(b) <= 18 else b[:17] + "…"
+                ax.text(px + pill_w / 2, py + PILL_H / 2, label,
+                        ha="center", va="center",
+                        fontsize=9, color=bc, fontweight="bold", zorder=4)
+
+        y_cursor -= tile_h + GY
 
 
 # ──────────────────────────────────────────────────────────
