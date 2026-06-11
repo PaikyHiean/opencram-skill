@@ -1,12 +1,26 @@
 <div align="center">
-  <img src="claude_assistant.png" alt="alt text" width="300">
+
+<img src="claude_assistant.png" alt="OpenCram-Skill" width="325">
+
+<h3>OpenCram-Skill</h3>
+
+<p>把一学期的课件 PPT，变成考场上真正能用的打印件</p>
+
+<p><b>6 种 PDF · 多 agent · 全程可溯源 · 零字臆造 · 快速查找 · Claude Code Skill</b></p>
+
+[![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![Python](https://img.shields.io/badge/python-3.8%2B-3776AB?logo=python&logoColor=white)](scripts/) [![Platform](https://img.shields.io/badge/platform-Win%20%7C%20Mac%20%7C%20Linux-lightgrey)](#快速上手) [![Claude Code](https://img.shields.io/badge/requires-Claude%20Code-orange)](https://claude.ai/code) [![Outputs](https://img.shields.io/badge/outputs-6%20种%20PDF-green)](#这是什么)
+
+<p>
+  <a href="#这是什么">产物说明</a> ·
+  <a href="#快速上手">快速上手</a> ·
+  <a href="#opencram-skill会如何进行">工作流程</a> ·
+  <a href="#示例数据">示例数据</a> ·
+  <a href="#常见问题排查">常见问题</a>
+</p>
+
 </div>
 
-# OpenCram-Skill
-
-> **把一学期的课件 PPT，变成考场上真正能用的打印件——让考场上要找的每条知识点都显而易见。**
-
-零代码。不用懂命令行。把课件丢进一个文件夹，对 Claude 说一句话，回来取 PDF。
+不用懂命令行，把课件丢进一个文件夹，对 Claude 说一句话，回来取整理好的 PDF。
 
 ---
 
