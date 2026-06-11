@@ -4,6 +4,10 @@
 
 零代码。不用懂命令行。把课件丢进一个文件夹，对 Claude 说一句话，回来取 PDF。
 
+<!-- 🎬 演示 GIF 占位（Hiean 后补）：录一段「丢文件夹 → 说一句话 → 取 PDF」的操作，
+     放 docs/images/demo.gif，再取消下面这行注释： -->
+<!-- ![演示](docs/images/demo.gif) -->
+
 ---
 
 ## 这是什么
@@ -19,14 +23,20 @@
 | ⚡ **C · 速查卡** | 规则 / 条件 / 流程 / 公式，以"怎么判断、怎么操作"为中心，附来源指针 |
 | 🗺️ **M · 思维导图** | 一页全局总览 + 逐章彩色分支卡片，快速建立知识脉络 |
 
-> 真实跑出来的成品规模：
+六种产物长这样（点开看大图）：
 
-<!--
-🖼️ 产物缩略图待补充（Hiean）：为 L0/L1/QA/L2/C/M 各截一张代表性页面，
-放 docs/images/l0.png … m.png，再把上表改成图文并茂。
--->
-
----
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/L0%20清洗版全集PPT.png" alt="L0 清洗版全集" width="260"><br><sub><b>L0 · 清洗版全集</b></sub></td>
+    <td align="center"><img src="docs/images/L1%20核心知识手册.png" alt="L1 核心知识手册" width="260"><br><sub><b>L1 · 核心知识手册</b></sub></td>
+    <td align="center"><img src="docs/images/QA%20简答论述题记录.png" alt="QA 简答库" width="260"><br><sub><b>QA · 简答库</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/L2%20关键词索引.png" alt="L2 关键词索引" width="260"><br><sub><b>L2 · 关键词索引</b></sub></td>
+    <td align="center"><img src="docs/images/C%20速查卡.png" alt="C 速查卡" width="260"><br><sub><b>C · 速查卡</b></sub></td>
+    <td align="center"><img src="docs/images/M%20思维导图.png" alt="M 思维导图" width="260"><br><sub><b>M · 思维导图</b></sub></td>
+  </tr>
+</table>
 
 ---
 
@@ -48,7 +58,7 @@
 
 ### 你需要先有
 
-- **[Claude Code](https://claude.ai/code)** —— 装好、能正常运行（本 skill 就在它里面跑）
+- **[Claude Code](https://claude.ai/code)** , 可见我的[安装配置教程](https://github.com/PaikyHiean/Server-Configuration-Claude-Code)
 - Windows / macOS / Linux 都支持
 
 ### 第一次安装
@@ -114,8 +124,84 @@ cp -r ./opencram-skill ~/.claude/skills/open-book-exam-courseware
  📦 去 outputs/ 取件
 ```
 
-> 完整的内部编排（抽取 → 页码映射 → 逐章 AI agent 蒸馏 → 渲染 → agent 复核，共 11 个 Phase）写在
-> [`SKILL.md`](SKILL.md) 里，你不需要关心。
+> 完整的内部编排（抽取 → 页码映射 → 逐章 AI agent 蒸馏 → 渲染 → agent 复核，共 11 个 Phase）
+> 写在 [`SKILL.md`](SKILL.md) 里，你可以点开下面看全貌。
+
+<details>
+<summary><b>🔧 展开：完整内部流程（Phase 0–11）</b></summary>
+
+```
+ 📁 课件文件夹
+     │
+     ▼
+ Phase 0   盘点 ···················· inventory.py
+     │
+     ▼
+ Phase 1   章节识别  ✋ 需你确认 ····· detect_chapters.py
+     │
+     ▼
+ Phase 2   勾选产物 + 精简档  ✋ 需你确认 ·· config.json
+     │
+     ▼
+ Phase 3   依赖体检 / 安装 ·········· doctor.py --install
+     │
+     ▼
+ Phase 4   抽取文字·表·图 + 建页码映射 ·· extract.py
+     │
+     ▼
+ Phase 5   L0 清洗版全集 ············ build_l0.py → L0.pdf
+     │
+     ▼
+ Phase 6–10   五种知识产物（各派一队子 agent，见下方「AI 小队」）
+     │         L1 核心知识手册 · QA 简答库 · L2 关键词索引
+     │         C 速查卡 · M 思维导图（以 L1 蒸馏结果为源）
+     │
+     ▼
+ Phase 11   复核 agent ············· 防臆造体检，列出待核清单
+     │
+     ▼
+ 📦 outputs/ 取件
+```
+
+</details>
+
+---
+
+## 🤝 背后是一支分工明确的 AI 小队
+
+知识产物（L1/QA/L2/C/M）不是一个大模型一口气硬读完所有课件——那样必然截断、幻觉。
+这里用的是**主控 + 多个专职子 agent 协作**：主控只调度、不读原文；每个子 agent 只领**一章**，
+互相隔离、可并行，谁也塞不爆上下文，不必有**token 焦虑**。
+
+```
+                  主控 Orchestrator（Claude）
+                  └ 只读简报 / JSON，绝不把课件原文读进上下文
+                              │
+                  按「单章」并行派发 Task 子 agent
+                              │
+        ┌────────┬────────┬────────┬────────┐
+       章节1    章节2     章节3    ...      章节N      每个 agent 只领一章，
+        │        │        │                 │        上下文互相隔离
+        └────────┴────────┴────────┴────────┘
+                              │  各章各自产出 out_<k>.json
+                              ▼
+            merge_*.py   确定性合并（加编号 · 源指针 · 图片路径）
+                              ▼
+                       render.py  →  Typst 渲染 PDF
+```
+
+按产物派发不同「工种」的子 agent，各司其职（角色定义都在 [`agents/`](agents/) 下）：
+
+- 🧪 **蒸馏 agent** — L1：语义去重、压缩、补小节标题，**正文仍逐字**不改写
+- 🖼️ **图片筛查 agent** — L1：逐张判断配图去留（流程图/ER 图留下，装饰图删掉）
+- ❓ **抽题 agent** — QA：只收 PPT 里真出现过的题；有题无答才补答，并标 〔AI〕
+- 🔑 **抽词 agent** — L2：抽专业术语 + 高/中/低频分级 + 原文定义
+- ⚡ **速查 agent** — C：抽规则 / 流程 / 公式 / 对比表
+- 🗺️ **导图 agent** — M：每章一个按主题归并分支，再加 1 个**全局总览 agent** 汇总
+- 🛡️ **复核 agent** — 交付前防臆造体检，列出待核清单（只提示、**不改产物**）
+
+> **为什么这样设计能信？** 编号与源指针（页码）全程由脚本**确定性**生成，AI 子 agent 只碰文字内容、
+> 从不经手页码——所以 AI 再聪明也动不了你的溯源链，页码永不漂移。
 
 ---
 
@@ -196,7 +282,7 @@ Claude：✅ 全部完成，产物在 outputs/ 文件夹：
         M 思维导图.pdf（8 页）
 ```
 
-
+---
 
 ## 关于"可溯源"优势
 
@@ -315,8 +401,7 @@ opencram-skill/
 
 ## 参与贡献 / 反馈
 
-发现 bug、想要新产物、或某些课件处理出错？欢迎提
-[Issue](https://github.com/PaikyHiean/opencram-skill/issues) 或 Pull Request。
+发现 bug、想要新产物、或某些课件处理出错？欢迎提 Issue 或 Pull Request。
 
 如果它帮你考场上少翻了几次书，给个 ⭐ 就是最好的反馈。
 
@@ -324,4 +409,4 @@ opencram-skill/
 
 ## License
 
-待补充（建议 MIT，便于开源传播——请 Hiean 确认）。
+[MIT](LICENSE) © 2026 PaikyHiean — 可自由使用、修改、分发，附带版权声明即可。

@@ -308,24 +308,31 @@ python scripts/prep_m.py
 
 #### 步骤二：子 agent 逐章归纳分支
 按 `m/index.json` 逐章派子 agent（角色定义见 `agents/mindmap.md`），
-每个只读自己那章的 `in_<k>.json`，把 17–46 小节按主题归纳为 6–12 个分支，产出 `out_<k>.json`：
+每个只读自己那章的 `in_<k>.json`，把该章小节按主题归纳为 **4 层结构**
+（L2 分支 → L3 子分支 → L4 叶节点），产出 `out_<k>.json`：
 ```json
 {
   "chapter_index": 1,
   "chapter_title": "第1章 财产保险概论",
   "branches": [
     {
-      "title": "概念与保险标的",
-      "nodes": [
-        "财产险以财产及有关利益为标的",
-        "可保利益须合法、确定、可用货币估量"
+      "title": "业务体系与分类",
+      "subbranches": [
+        {
+          "title": "财产损失险",
+          "nodes": [
+            "火灾险：企业财产险、家庭财产险",
+            "运输险：车辆、船舶、货物运输"
+          ]
+        }
       ]
     }
   ]
 }
 ```
-- 分支标题 6–12 字，名词短语；节点 12–25 字，来自原文精简
-- 子 agent 只回简报（分支数/节点数），不回全文 JSON
+- L2 分支 4–8 字（每章 4–6 个）；L3 子分支 4–7 字（每 L2 ≤3 个）；L4 叶节点 8–20 字（每 L3 ≤3 个，全章 ≤54）
+- 节点来自 PPT 原文精简，禁止 AI 补充；`render_m.py` 按 `branches` 是否含 `subbranches` 自动选 4 层渲染
+- 子 agent 只回简报（L2/L3/L4 计数），不回全文 JSON
 
 #### 步骤三：全局总览 agent
 由一个独立 agent（角色定义见 `agents/mindmap_global.md`）读取所有 `out_<k>.json` 的分支标题，
