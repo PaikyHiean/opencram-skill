@@ -2,7 +2,7 @@
   <img src="claude_assistant.png" alt="alt text" width="300">
 </div>
 
-# Opencram-Skill
+# OpenCram-Skill
 
 > **把一学期的课件 PPT，变成考场上真正能用的打印件——每条知识点都知道自己在你手里那叠纸的第几页。**
 
