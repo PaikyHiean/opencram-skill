@@ -67,11 +67,14 @@ python scripts/detect_chapters.py
 ### Phase 2 · 产物勾选与参数（必须用户确认）
 向用户给出 6 产物清单（默认勾 L0+L1），并设两项参数，写入 `work/config.json`：
 ```json
-{ "reference_base": "source",  "compression": "conservative",
-  "products": ["L0","L1"] }
+{ "reference_base": "source", "compression": "conservative" }
 ```
 - `reference_base`：`source`（带原件打印，默认）/ `l0`（带 L0 打印，显示 L0 页码）。
 - `compression`：`conservative`（默认，可誊抄）/ `standard`（要点化）/ `aggressive`（骨架）。
+
+> **选中哪些产物不写盘**：由你（orchestrator）在对话上下文里记住用户的勾选，
+> 据此决定后续派发哪几条产物管线（Phase 5–10）；脚本不读取产物清单。
+> `config.json` 只持久化脚本会消费的 `reference_base` 与 `compression`。
 
 ### Phase 3 · bootstrap（依赖体检/安装，征求一次同意）
 ```
@@ -366,7 +369,7 @@ M 由 `render_m.py` 用 matplotlib 渲染（不走 Typst）。第一页为全局
 |---|---|
 | `work/manifest.json` | Phase 0 盘点 |
 | `work/drafts/chapters.json` | 章节图（**用户确认后**锁定） |
-| `work/config.json` | 参考基准 / 精简档 / 选中产物 |
+| `work/config.json` | 参考基准 `reference_base` / 精简档 `compression`（产物清单不写盘，由对话决定） |
 | `work/extracted/<stem>/content.json` | 幻灯片结构化数据（锚点/标题/段落/表/图名） |
 | `work/extracted/<stem>/slides.md` | 人读版归一化 Markdown |
 | `work/extracted/<stem>/images/` | 从 PPT 抠出的内嵌图 |
