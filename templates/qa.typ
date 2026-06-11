@@ -114,6 +114,17 @@
 ]
 #v(0.5em)
 
+// 题型颜色图例（参考速查卡：不同颜色对应不同题型）
+#block(above: 0.3em, below: 0.9em, {
+  type-badge("简答题")
+  h(6pt)
+  type-badge("论述题")
+  h(6pt)
+  type-badge("案例题")
+  h(6pt)
+  type-badge("其他")
+})
+
 // ---- 正文 ----
 #for (i, ch) in data.chapters.enumerate() {
   if ch.items.len() > 0 {
