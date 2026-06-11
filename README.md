@@ -1,4 +1,6 @@
-![alt text](<claude assistant.png>)
+<div align="center">
+  <img src="claude_assistant.png" alt="alt text" width="350">
+</div>
 
 # 开卷考课件整理 Skill
 
