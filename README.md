@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="claude_assistant.png" alt="alt text" width="350">
+  <img src="claude_assistant.png" alt="alt text" width="250">
 </div>
 
 # Opencram-Skill
