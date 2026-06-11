@@ -8,7 +8,8 @@ build_l0.py — 产物 L0：带书签的清洗版全集。
   1. 按章节顺序合并各源 PDF；删除"疑似废页"（保守，--keep-all 可全保留）。
   2. 写章节书签（多文件章再加逐文件子书签）。
   3. 每页角盖中文来源戳（reportlab overlay + pypdf merge）。
-  4. 产出 outputs/L0.pdf、work/l0_pagemap.json（锚点→L0页）、
+  4. 产出 outputs/清洗版PPT全集.pdf（先建中间名 L0.pdf 再改名）、
+     work/l0_pagemap.json（锚点→L0页）、
      work/l0_deleted.json（删了哪些页 + 原因，供复核）。
 
 注意：真实使用中章节图须先经用户确认锁定；此处直接读 chapters.json。

@@ -36,12 +36,13 @@ description: >
 
 - 所有脚本用 Python 跨平台运行。Windows 控制台调用时先设 UTF-8：
   PowerShell 里 `$env:PYTHONUTF8=1; [Console]::OutputEncoding=[Text.UTF8Encoding]::new()`。
-- 依赖：python-pptx、pypdf、reportlab（pip）；LibreOffice（转 PDF/pptx）；Typst（渲染）。
+- 依赖：python-pptx、pypdf、reportlab、matplotlib（pip）；LibreOffice（转 PDF/pptx）；
+  Typst（渲染 L1/QA/L2/C）。**M 思维导图用 matplotlib 渲染（render_m.py），不走 Typst。**
   缺中文字体会导致转 PDF 乱码。
 
 ---
 
-## 编排流程（Phase 0–9）
+## 编排流程（Phase 0–11）
 
 > 命令均在 skill 根目录执行。`<课件文件夹>` 是用户给的路径。
 
@@ -92,7 +93,7 @@ python scripts/extract.py
 python scripts/build_l0.py            # 默认删空白等废页 + 盖来源戳
 python scripts/build_l0.py --keep-all # 一页不删（最保守）
 ```
-产出 `outputs/L0.pdf`、`work/l0_pagemap.json`（锚点→L0页，L1/L2 换算用）、
+产出 `outputs/清洗版PPT全集.pdf`（中间名 `L0.pdf`，最终自动改名）、`work/l0_pagemap.json`（锚点→L0页，L1/L2 换算用）、
 `work/l0_deleted.json`（删了哪些页，**请向用户复核删页清单**）。
 
 ### Phase 6 · L1（核心知识手册）
@@ -157,7 +158,7 @@ python scripts/apply_image_screen.py
 
 **步骤五：渲染与验证**
 ```
-python scripts/render.py l1          # → outputs/L1.pdf
+python scripts/render.py l1          # → outputs/核心知识手册.pdf
 python scripts/verify_l1.py          # 可选：检查每节有源指针、锚点可解析
 ```
 AI 生成的小节在 PDF 中以 `〔AI〕` 红色小字标注（不影响阅读，提示需核对原文）。
@@ -198,7 +199,7 @@ python scripts/merge_qa.py
 
 #### 步骤四：渲染
 ```
-python scripts/render.py qa           # → outputs/QA.pdf
+python scripts/render.py qa           # → outputs/简答库.pdf
 ```
 AI 补答在 PDF 中以 `〔AI〕` 红色小字标注；题目/答案区之间用细横线分隔。
 
@@ -237,7 +238,7 @@ python scripts/merge_l2.py
 
 #### 步骤四：渲染
 ```
-python scripts/render.py l2           # → outputs/L2.pdf
+python scripts/render.py l2           # → outputs/关键词索引.pdf
 ```
 双栏布局，每章 navy 色块标题；每个词条带频率徽章（红/蓝/灰）、左色带、定义与源指针。
 
@@ -289,7 +290,7 @@ python scripts/merge_c.py
 
 #### 步骤四：渲染
 ```
-python scripts/render.py c            # → outputs/C.pdf
+python scripts/render.py c            # → outputs/速查卡.pdf
 ```
 单栏布局，每章 navy 色块标题；每张卡片带类型徽章（紫/橙/蓝/绿）、左色带、内容与源指针；
 对比表类型自动解析为 Typst 表格。
@@ -346,10 +347,11 @@ python scripts/merge_m.py
 
 #### 步骤五：渲染
 ```
-python scripts/render.py m            # → outputs/M.pdf
+python scripts/render.py m            # → outputs/思维导图.pdf
 ```
-第一页为全局总览（章节 tile 网格，每章带彩色分支 pill）；
-后续每章一页（2 列分支卡片网格，12 色循环左边框）。
+M 由 `render_m.py` 用 matplotlib 渲染（不走 Typst）。第一页为全局总览
+（章节 tile 网格，每章带彩色分支 pill）；后续每章一页为 **XMind 式树形导图**
+（根节点章色块在左 → L2/L3 分支节点居中 → L4 叶节点文字在右，肘形折线连接，12 色循环）。
 
 ### Phase 11 · 复核（Coverage / 防臆造）
 - 每章都有产物？对照 `chapters.json`。
@@ -394,12 +396,12 @@ python scripts/render.py m            # → outputs/M.pdf
 | `work/distilled/m/out_<k>.json` | 第 k 章的思维导图 agent 产出（分支+节点） |
 | `work/distilled/m/out_global.json` | 全局总览 agent 产出（课程名+各章分支标题列表） |
 | `work/distilled/m.json` | M 思维导图主数据（合并后，供渲染） |
-| `outputs/L0.pdf` | 带书签清洗版全集 |
-| `outputs/L1.pdf` | 核心知识手册 |
-| `outputs/QA.pdf` | 简答/论述 QA 记录 |
-| `outputs/L2.pdf` | 关键词索引 |
-| `outputs/C.pdf` | 速查卡 |
-| `outputs/M.pdf` | 思维导图 |
+| `outputs/清洗版PPT全集.pdf` | L0 带书签清洗版全集（中间名 `L0.pdf`） |
+| `outputs/核心知识手册.pdf` | L1 核心知识手册 |
+| `outputs/简答库.pdf` | QA 简答/论述记录 |
+| `outputs/关键词索引.pdf` | L2 关键词索引 |
+| `outputs/速查卡.pdf` | C 速查卡 |
+| `outputs/思维导图.pdf` | M 思维导图 |
 
 ## 安装为全局 skill
 把 `SKILL.md scripts/ templates/ agents/` 复制到 `~/.claude/skills/open-book-exam-courseware/`。

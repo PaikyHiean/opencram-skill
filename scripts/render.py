@@ -3,12 +3,12 @@ render.py — 渲染产物 PDF。
 
 L1/QA/L2/C 用 Typst；M 思维导图用 matplotlib（render_m.py），不依赖 Typst。
 
-用法：
-    python scripts/render.py l1            # 渲染 outputs/L1.pdf
-    python scripts/render.py qa            # 渲染 outputs/QA.pdf
-    python scripts/render.py l2            # 渲染 outputs/L2.pdf
-    python scripts/render.py c             # 渲染 outputs/C.pdf
-    python scripts/render.py m             # 渲染 outputs/M.pdf（树形思维导图）
+用法（渲染后自动改名为中文产物名）：
+    python scripts/render.py l1            # → outputs/核心知识手册.pdf
+    python scripts/render.py qa            # → outputs/简答库.pdf
+    python scripts/render.py l2            # → outputs/关键词索引.pdf
+    python scripts/render.py c             # → outputs/速查卡.pdf
+    python scripts/render.py m             # → outputs/思维导图.pdf（matplotlib 树形图）
     python scripts/render.py l1 --open     # 渲染后打开
 """
 

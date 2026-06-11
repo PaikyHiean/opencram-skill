@@ -21,20 +21,20 @@
 | 📋 **QA · 简答库** | PPT 里出现过的简答/论述/案例题，原题原答逐字整理；只有题没答案时 AI 补充并标 〔AI〕 |
 | 🔑 **L2 · 关键词索引** | 按章整理的专业术语，标高/中/低频，附 PPT 原文定义与页码 |
 | ⚡ **C · 速查卡** | 规则 / 条件 / 流程 / 公式，以"怎么判断、怎么操作"为中心，附来源指针 |
-| 🗺️ **M · 思维导图** | 一页全局总览 + 逐章彩色分支卡片，快速建立知识脉络 |
+| 🗺️ **M · 思维导图** | 一页全局总览 + 逐章树形导图（XMind 式：根在左、分支居中、叶在右），快速建立知识脉络 |
 
 六种产物长这样（点开看大图）：
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/L0%20清洗版全集PPT.png" alt="L0 清洗版全集" width="260"><br><sub><b>L0 · 清洗版全集</b></sub></td>
-    <td align="center"><img src="docs/images/L1%20核心知识手册.png" alt="L1 核心知识手册" width="260"><br><sub><b>L1 · 核心知识手册</b></sub></td>
-    <td align="center"><img src="docs/images/QA%20简答论述题记录.png" alt="QA 简答库" width="260"><br><sub><b>QA · 简答库</b></sub></td>
+    <td align="center"><img src="docs/images/清洗版PPT全集.png" alt="清洗版PPT全集" width="260"><br><sub><b>清洗版PPT全集</b></sub></td>
+    <td align="center"><img src="docs/images/核心知识手册.png" alt="核心知识手册" width="260"><br><sub><b>核心知识手册</b></sub></td>
+    <td align="center"><img src="docs/images/简答库.png" alt="简答库" width="260"><br><sub><b>简答库</b></sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/L2%20关键词索引.png" alt="L2 关键词索引" width="260"><br><sub><b>L2 · 关键词索引</b></sub></td>
-    <td align="center"><img src="docs/images/C%20速查卡.png" alt="C 速查卡" width="260"><br><sub><b>C · 速查卡</b></sub></td>
-    <td align="center"><img src="docs/images/M%20思维导图.png" alt="M 思维导图" width="260"><br><sub><b>M · 思维导图</b></sub></td>
+    <td align="center"><img src="docs/images/关键词索引.png" alt="关键词索引" width="260"><br><sub><b>关键词索引</b></sub></td>
+    <td align="center"><img src="docs/images/速查卡.png" alt="速查卡" width="260"><br><sub><b>速查卡</b></sub></td>
+    <td align="center"><img src="docs/images/思维导图.png" alt="思维导图" width="260"><br><sub><b>思维导图</b></sub></td>
   </tr>
 </table>
 
@@ -187,7 +187,7 @@ cp -r ./opencram-skill ~/.claude/skills/open-book-exam-courseware
                               ▼
             merge_*.py   确定性合并（加编号 · 源指针 · 图片路径）
                               ▼
-                       render.py  →  Typst 渲染 PDF
+              render.py → PDF（L1/QA/L2/C 走 Typst，M 走 matplotlib）
 ```
 
 按产物派发不同「工种」的子 agent，各司其职（角色定义都在 [`agents/`](agents/) 下）：
@@ -234,12 +234,12 @@ cp -r ./opencram-skill ~/.claude/skills/open-book-exam-courseware
 ```
 输入：11 个 .ppt 文件，978 张幻灯片 → 自动识别为 7 章
 
-✅ L0 清洗版全集.pdf   973 页 · 36 MB   （删掉 5 张废页，含章节书签 + 来源戳）
-✅ L1 核心知识手册.pdf  61 页 · 2 MB    （191 个小节 / 761 条知识点 / 内嵌 7 张原图）
-✅ QA 简答库.pdf        17 页           （56 道题，原题原答 + AI 补答标注）
-✅ L2 关键词索引.pdf    15 页           （353 个词条，含频率分级与页码来源）
-✅ C  速查卡.pdf        18 页           （139 张卡片：公式/规则/对比/流程）
-✅ M  思维导图.pdf       8 页           （全局总览 + 7 章，35 主分支 / 103 子分支 / 292 节点）
+✅ 清洗版PPT全集.pdf   973 页 · 36 MB   （删掉 5 张废页，含章节书签 + 来源戳）
+✅ 核心知识手册.pdf     61 页 · 2 MB    （191 个小节 / 761 条知识点 / 内嵌 7 张原图）
+✅ 简答库.pdf          17 页           （56 道题，原题原答 + AI 补答标注）
+✅ 关键词索引.pdf      15 页           （353 个词条，含频率分级与页码来源）
+✅ 速查卡.pdf          18 页           （139 张卡片：公式/规则/对比/流程）
+✅ 思维导图.pdf         8 页           （全局总览 + 逐章树形导图，35 主分支 / 103 子分支 / 292 节点）
 ```
 
 > 这是**一份真实课件**的实测结果，换你自己的课件，规模会不同。
@@ -274,12 +274,12 @@ Claude：好，开始处理。检测到缺 LibreOffice，安装吗？（约几�
 你：装
 
 Claude：✅ 全部完成，产物在 outputs/ 文件夹：
-        L0 清洗版全集.pdf（973 页）
-        L1 核心知识手册.pdf（61 页）
-        QA 简答库.pdf（17 页）
-        L2 关键词索引.pdf（15 页）
-        C 速查卡.pdf（18 页）
-        M 思维导图.pdf（8 页）
+        清洗版PPT全集.pdf（973 页）
+        核心知识手册.pdf（61 页）
+        简答库.pdf（17 页）
+        关键词索引.pdf（15 页）
+        速查卡.pdf（18 页）
+        思维导图.pdf（8 页）
 ```
 
 ---
@@ -294,7 +294,7 @@ Claude：✅ 全部完成，产物在 outputs/ 文件夹：
 
 考场上遇到拿不准的题，你就知道该翻自己打印件的哪一页去核对原文——而不是赌 AI 有没有编。
 
-> 如果你勾选了 L0（清洗版全集PPT），指针会自动换算成 L0 里的实际页码。
+> 如果你勾选了 L0（清洗版PPT全集），指针会自动换算成 L0 里的实际页码。
 
 ---
 
@@ -306,7 +306,7 @@ Claude：✅ 全部完成，产物在 outputs/ 文件夹：
 2. **全程可溯源** —— 每条知识点都挂一个 `(源文件名, 第几张幻灯片)` 锚点，清洗规则变了也不漂移。
 3. **AI 生成必标注** —— 任何由 AI 补写的内容（如有题无答时的补答、语义归并后的小节）一律以红色 `〔AI〕` 标出，提醒你回原文核对。
 
-技术上：文字用 [python-pptx](https://python-pptx.readthedocs.io/) / [pypdf](https://pypdf.readthedocs.io/) 抽取，排版用单文件二进制的 [Typst](https://typst.app/)（不用装 LaTeX），图片直接从 PPT 内嵌数据抠出。详细编排见 [`SKILL.md`](SKILL.md)，排版参数见 [`templates/TYPOGRAPHY.md`](templates/TYPOGRAPHY.md)。
+技术上：文字用 [python-pptx](https://python-pptx.readthedocs.io/) / [pypdf](https://pypdf.readthedocs.io/) 抽取，L1/QA/L2/C 用单文件二进制的 [Typst](https://typst.app/) 排版（不用装 LaTeX），M 思维导图用 matplotlib 画树形图，图片直接从 PPT 内嵌数据抠出。详细编排见 [`SKILL.md`](SKILL.md)，排版参数见 [`templates/TYPOGRAPHY.md`](templates/TYPOGRAPHY.md)。
 
 ---
 
@@ -332,12 +332,13 @@ opencram-skill/
 │   ├── detect_chapters.py     推断章节结构
 │   ├── doctor.py              依赖体检 / 自动安装（--install）
 │   ├── extract.py             抽取每页文字/表/图 + 建页码映射
-│   ├── build_l0.py            生成 L0 清洗版全集
+│   ├── build_l0.py            生成 L0 清洗版全集（清洗版PPT全集.pdf）
 │   ├── distill_l1.py          L1 确定性基线
 │   ├── prep_*.py / merge_*.py 各产物的"切输入包 / 合并结果"
-│   ├── render.py              用 Typst 渲染出 PDF
+│   ├── render.py              L1/QA/L2/C 用 Typst 渲染出 PDF
+│   ├── render_m.py            M 思维导图用 matplotlib 渲染（树形布局）
 │   └── ...
-├── templates/             ← Typst 排版模板（l1/l2/c/m/qa.typ）+ 排版参数说明
+├── templates/             ← Typst 排版模板（l1/l2/c/qa.typ）+ 排版参数说明
 ├── agents/                ← 各 AI 子 agent 的角色说明（蒸馏/抽题/抽词/速查/导图…）
 ├── work/                  ← 运行时中间产物（自动生成，已 gitignore）
 └── outputs/               ← 最终 PDF 落地处（自动生成，已 gitignore）
