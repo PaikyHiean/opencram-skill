@@ -2,15 +2,11 @@
   <img src="claude_assistant.png" alt="alt text" width="350">
 </div>
 
-# 开卷考课件整理 Skill
+# Opencram-Skill
 
 > **把一学期的课件 PPT，变成考场上真正能用的打印件——每条知识点都知道自己在你手里那叠纸的第几页。**
 
 零代码。不用懂命令行。把课件丢进一个文件夹，对 Claude 说一句话，回来取 PDF。
-
-<!-- 🎬 演示 GIF 占位（Hiean 后补）：录一段「丢文件夹 → 说一句话 → 取 PDF」的操作，
-     放 docs/images/demo.gif，再取消下面这行注释： -->
-<!-- ![演示](docs/images/demo.gif) -->
 
 ---
 
